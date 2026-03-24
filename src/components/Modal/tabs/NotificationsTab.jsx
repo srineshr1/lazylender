@@ -1,84 +1,75 @@
 import React from 'react'
-import SettingSection from '../../shared/SettingSection'
-import Toggle from '../../shared/Toggle'
-import Select from '../../shared/Select'
-import DualSlider from '../../shared/DualSlider'
+import { useDarkStore } from '../../../store/useDarkStore'
 import { useSettingsStore } from '../../../store/useSettingsStore'
 
 export default function NotificationsTab() {
+  const { isDark } = useDarkStore()
   const {
     notificationsEnabled,
     reminderTime,
-    soundAlerts,
-    quietHoursEnabled,
-    quietHoursStart,
-    quietHoursEnd,
     updateSetting,
-    updateMultiple,
   } = useSettingsStore()
-
-  const formatHour = (hour) => {
-    const h = hour % 12 || 12
-    const ampm = hour >= 12 ? 'PM' : 'AM'
-    return `${h}:00 ${ampm}`
-  }
 
   return (
     <div>
-      <SettingSection title="Notification Preferences">
-        <Toggle
-          label="Enable notifications"
-          description="Show notifications for events and reminders"
-          checked={notificationsEnabled}
-          onChange={(checked) => updateSetting('notificationsEnabled', checked)}
-        />
+      <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
+        isDark ? 'text-gray-500' : 'text-gray-400'
+      }`}>
+        Notifications
+      </div>
 
-        <Select
-          label="Default reminder time"
-          description="How early to notify before events start"
-          options={[
-            { value: 5, label: '5 minutes before' },
-            { value: 10, label: '10 minutes before' },
-            { value: 15, label: '15 minutes before' },
-            { value: 30, label: '30 minutes before' },
-            { value: 60, label: '1 hour before' },
-          ]}
-          value={reminderTime}
-          onChange={(value) => updateSetting('reminderTime', parseInt(value))}
-          disabled={!notificationsEnabled}
-        />
+      <div className="space-y-5">
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Enable Notifications
+            </p>
+            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              Show reminders for upcoming events
+            </p>
+          </div>
+          <button
+            onClick={() => updateSetting('notificationsEnabled', !notificationsEnabled)}
+            className={`relative w-10 h-5 rounded-full transition-colors ${
+              notificationsEnabled 
+                ? 'bg-accent' 
+                : isDark ? 'bg-white/20' : 'bg-gray-300'
+            }`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+              notificationsEnabled ? 'translate-x-5' : ''
+            }`} />
+          </button>
+        </div>
 
-        <Toggle
-          label="Sound alerts"
-          description="Play sound when notifications appear"
-          checked={soundAlerts}
-          onChange={(checked) => updateSetting('soundAlerts', checked)}
-          disabled={true}
-        />
-      </SettingSection>
-
-      <SettingSection title="Quiet Hours">
-        <Toggle
-          label="Enable quiet hours"
-          description="Don't send notifications during specific times"
-          checked={quietHoursEnabled}
-          onChange={(checked) => updateSetting('quietHoursEnabled', checked)}
-        />
-
-        {quietHoursEnabled && (
-          <DualSlider
-            label="Quiet hours range"
-            description="No notifications will be sent during this time"
-            valueStart={quietHoursStart}
-            valueEnd={quietHoursEnd}
-            min={0}
-            max={23}
-            step={1}
-            formatValue={formatHour}
-            onChange={(start, end) => updateMultiple({ quietHoursStart: start, quietHoursEnd: end })}
-          />
+        {notificationsEnabled && (
+          <div className="flex items-center justify-between py-2 pl-4 border-l-2 border-accent/30">
+            <div>
+              <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                Reminder Time
+              </p>
+              <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                Before event starts
+              </p>
+            </div>
+            <select
+              value={reminderTime}
+              onChange={(e) => updateSetting('reminderTime', parseInt(e.target.value))}
+              className={`px-3 py-1.5 rounded-lg text-[13px] border outline-none transition-colors ${
+                isDark
+                  ? 'bg-[#252340] border-white/10 text-gray-200 focus:border-white/30'
+                  : 'bg-white border-gray-200 text-gray-700 focus:border-gray-400'
+              }`}
+            >
+              <option value={5}>5 minutes</option>
+              <option value={10}>10 minutes</option>
+              <option value={15}>15 minutes</option>
+              <option value={30}>30 minutes</option>
+              <option value={60}>1 hour</option>
+            </select>
+          </div>
         )}
-      </SettingSection>
+      </div>
     </div>
   )
 }

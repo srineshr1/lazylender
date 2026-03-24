@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor,
   useSensor, useSensors, closestCenter,
@@ -29,45 +29,45 @@ export default function WeekView({ onEventClick, onSlotClick }) {
   const { isDark } = useDarkStore()
   const { showPastEvents } = useSettingsStore()
 
-  const days = getFullWeekDays(currentWeekStart)
+  const days = useMemo(() => getFullWeekDays(currentWeekStart), [currentWeekStart])
   const [draggingEv, setDraggingEv] = useState(null)
   const [slideDir, setSlideDir] = useState(null)
   const [animKey, setAnimKey] = useState(0)
   const [showSleepSettings, setShowSleepSettings] = useState(false)
 
-  const expandedEvents = expandRecurring(events, days)
+  const expandedEvents = useMemo(() => expandRecurring(events, days), [events, days])
   
-  // Check if event is in the past and should be dimmed
-  const isEventPast = (ev) => {
+  // Memoized function to check if event is in the past
+  const isEventPast = useCallback((ev) => {
     const now = new Date()
     const eventDateTime = new Date(`${ev.date}T${ev.time}`)
     return eventDateTime < now
-  }
+  }, [])
 
-  // Apply dimming to past events based on showPastEvents setting
-  const getEventOpacity = (ev) => {
+  // Memoized function to get event opacity
+  const getEventOpacity = useCallback((ev) => {
     if (ev.done) return 0.5  // Completed events are always dimmed
     if (!showPastEvents && isEventPast(ev)) return 0.4  // Past events dimmed if setting is off
     return 1
-  }
+  }, [showPastEvents, isEventPast])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   )
 
-  const navigate = (dir) => {
+  const navigate = useCallback((dir) => {
     setSlideDir(dir)
     setAnimKey((k) => k + 1)
     if (dir === 'left') prevWeek()
     else nextWeek()
     setTimeout(() => setSlideDir(null), 350)
-  }
+  }, [prevWeek, nextWeek])
 
-  const handleDragStart = ({ active }) => {
+  const handleDragStart = useCallback(({ active }) => {
     setDraggingEv(active.data.current?.event || null)
-  }
+  }, [])
 
-  const handleDragEnd = ({ active, over, delta }) => {
+  const handleDragEnd = useCallback(({ active, over, delta }) => {
     setDraggingEv(null)
     if (!over) return
     const newDate = over.id
@@ -79,11 +79,14 @@ export default function WeekView({ onEventClick, onSlotClick }) {
     const newMins = Math.max(0, Math.min(23 * 60, currentMins + deltaMins))
     const newTime = minutesToTime(newMins)
     reschedule(ev._sourceId || ev.id, newDate, newTime)
-  }
+  }, [events, reschedule])
 
   const startDay = days[0]
   const endDay = days[days.length - 1]
-  const rangeLabel = `${format(startDay, 'MMMM d')} – ${format(endDay, 'd')}`
+  const rangeLabel = useMemo(() => 
+    `${format(startDay, 'MMMM d')} – ${format(endDay, 'd')}`,
+    [startDay, endDay]
+  )
 
   const slideClass = slideDir === 'left'
     ? 'animate-slideFromLeft'

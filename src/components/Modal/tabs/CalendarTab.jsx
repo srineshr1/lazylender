@@ -1,15 +1,11 @@
 import React from 'react'
-import SettingSection from '../../shared/SettingSection'
-import Select from '../../shared/Select'
-import Toggle from '../../shared/Toggle'
-import DualSlider from '../../shared/DualSlider'
+import { useDarkStore } from '../../../store/useDarkStore'
 import { useSettingsStore } from '../../../store/useSettingsStore'
 
 export default function CalendarTab() {
+  const { isDark } = useDarkStore()
   const {
     defaultView,
-    defaultEventDuration,
-    defaultEventColor,
     awakeStart,
     awakeEnd,
     showPastEvents,
@@ -25,68 +21,122 @@ export default function CalendarTab() {
 
   return (
     <div>
-      <SettingSection title="Defaults">
-        <Select
-          label="Default view"
-          description="Calendar view shown when app opens"
-          options={[
-            { value: 'day', label: 'Day' },
-            { value: 'week', label: 'Week' },
-            { value: 'month', label: 'Month' },
-          ]}
-          value={defaultView}
-          onChange={(value) => updateSetting('defaultView', value)}
-        />
+      <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
+        isDark ? 'text-gray-500' : 'text-gray-400'
+      }`}>
+        View Settings
+      </div>
 
-        <Select
-          label="Default event duration"
-          description="Duration pre-filled when creating new events"
-          options={[
-            { value: 15, label: '15 minutes' },
-            { value: 30, label: '30 minutes' },
-            { value: 60, label: '1 hour' },
-            { value: 90, label: '1.5 hours' },
-            { value: 120, label: '2 hours' },
-          ]}
-          value={defaultEventDuration}
-          onChange={(value) => updateSetting('defaultEventDuration', parseInt(value))}
-        />
+      <div className="space-y-5">
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Default View
+            </p>
+            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              Shown when app opens
+            </p>
+          </div>
+          <div className="flex rounded-lg overflow-hidden border ${
+            isDark ? 'border-white/10' : 'border-gray-200'
+          }">
+            {['day', 'week', 'month'].map((view) => (
+              <button
+                key={view}
+                onClick={() => updateSetting('defaultView', view)}
+                className={`px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                  defaultView === view
+                    ? isDark ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-900'
+                    : isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {view.charAt(0).toUpperCase() + view.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
 
-        <Select
-          label="Default event color"
-          description="Color pre-filled when creating new events"
-          options={[
-            { value: 'pink', label: 'Pink' },
-            { value: 'green', label: 'Green' },
-            { value: 'blue', label: 'Blue' },
-            { value: 'amber', label: 'Amber' },
-            { value: 'gray', label: 'Gray' },
-          ]}
-          value={defaultEventColor}
-          onChange={(value) => updateSetting('defaultEventColor', value)}
-        />
-      </SettingSection>
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Show Past Events
+            </p>
+            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              Display completed events
+            </p>
+          </div>
+          <button
+            onClick={() => updateSetting('showPastEvents', !showPastEvents)}
+            className={`relative w-10 h-5 rounded-full transition-colors ${
+              showPastEvents 
+                ? 'bg-accent' 
+                : isDark ? 'bg-white/20' : 'bg-gray-300'
+            }`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+              showPastEvents ? 'translate-x-5' : ''
+            }`} />
+          </button>
+        </div>
 
-      <SettingSection title="View Options">
-        <DualSlider
-          label="Awake hours"
-          description="Time range displayed in calendar views"
-          valueStart={awakeStart}
-          valueEnd={awakeEnd}
-          min={0}
-          max={24}
-          step={1}
-          formatValue={formatHour}
-          onChange={(start, end) => updateMultiple({ awakeStart: start, awakeEnd: end })}
-        />
+        <div className={`h-px my-4 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
 
-        <Toggle
-          label="Show past events"
-          description="Display events that have already occurred"
-          checked={showPastEvents}
-          onChange={(checked) => updateSetting('showPastEvents', checked)}
-        />
-      </SettingSection>
+        <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
+          isDark ? 'text-gray-500' : 'text-gray-400'
+        }`}>
+          Display Hours
+        </div>
+
+        <div className="py-2">
+          <div className="flex items-center justify-between mb-3">
+            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Awake Hours
+            </p>
+            <p className={`text-[12px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {formatHour(awakeStart)} - {formatHour(awakeEnd)}
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <div>
+              <label className={`text-[11px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                Start: {formatHour(awakeStart)}
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={23}
+                value={awakeStart}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value)
+                  if (val < awakeEnd) {
+                    updateMultiple({ awakeStart: val })
+                  }
+                }}
+                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-accent"
+              />
+            </div>
+            <div>
+              <label className={`text-[11px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                End: {formatHour(awakeEnd)}
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={24}
+                value={awakeEnd}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value)
+                  if (val > awakeStart) {
+                    updateMultiple({ awakeEnd: val })
+                  }
+                }}
+                className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-accent"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

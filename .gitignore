@@ -23,10 +23,14 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 *.local
+whatsapp-bridge/.env
 
 # WhatsApp Bridge Session & Sensitive Data
 .wwebjs_auth/
 .wwebjs_cache/
+whatsapp-bridge/.wwebjs_auth/
+whatsapp-bridge/.wwebjs_cache/
+whatsapp-bridge/sessions/
 events-queue.json
 .wwebjs_auth
 .wwebjs_cache
@@ -34,6 +38,19 @@ auth/
 *session*
 *.session
 whatsapp-session.json
+.api_keys
+bridge-middleware/
+
+# Dynamic Data
+whatsapp-bridge/public/bridge-status.json
+whatsapp-bridge/public/groups.json
+
+# Generated Assets
+whatsapp-qr-*.png
+qr-code-displayed.png
+
+# Secrets
+client_secret_*.json
 
 # Windows Reserved Names
 nul

@@ -11,6 +11,7 @@ const { pushEvents } = require('./calendarPush')
 const MAX_RECONNECT_ATTEMPTS = 15
 const RECONNECT_DELAY = 5000
 const STATUS_FILE = path.join(__dirname, 'public', 'bridge-status.json')
+const GROUPS_FILE = path.join(__dirname, 'public', 'groups.json')
 
 let reconnectAttempts = 0
 let qrData = null
@@ -22,6 +23,25 @@ function updateStatus(status) {
     fs.writeFileSync(STATUS_FILE, JSON.stringify(status, null, 2))
   } catch (err) {
     console.error('Failed to update status:', err.message)
+  }
+}
+
+async function updateGroups(client) {
+  try {
+    const chats = await client.getChats()
+    const groups = chats
+      .filter(chat => chat.isGroup)
+      .map(chat => ({
+        id: chat.id._serialized,
+        name: chat.name,
+        participantCount: chat.participants?.length || 0
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    
+    fs.writeFileSync(GROUPS_FILE, JSON.stringify(groups, null, 2))
+    log(`  📋 Fetched ${groups.length} groups`, 'info')
+  } catch (err) {
+    log(`  ⚠️  Failed to fetch groups: ${err.message}`, 'warning')
   }
 }
 
@@ -79,7 +99,7 @@ function createClient() {
     log('  ✅ Session authenticated and saved!', 'success')
   })
 
-  whatsappClient.on('ready', () => {
+  whatsappClient.on('ready', async () => {
     isReady = true
     qrData = null
     reconnectAttempts = 0
@@ -89,6 +109,9 @@ function createClient() {
     log('  ✅ Session restored (no QR needed)', 'success')
     log('  📡 Listening for messages...', 'info')
     log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n', 'success')
+    
+    // Fetch and save all groups
+    await updateGroups(whatsappClient)
   })
 
   whatsappClient.on('auth_failure', (msg) => {

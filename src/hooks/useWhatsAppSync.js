@@ -5,6 +5,7 @@ import { useNotificationStore } from '../store/useNotificationStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { getEvents, clearEvents, WhatsAppBridgeError } from '../api/whatsappClient'
 import { DEFAULT_POLL_INTERVAL } from '../lib/constants'
+import { sanitizeString } from '../lib/validation'
 
 const DEFAULT_POLL = parseInt(import.meta.env.VITE_POLL_INTERVAL || String(DEFAULT_POLL_INTERVAL), 10)
 
@@ -50,11 +51,11 @@ export function useWhatsAppSync() {
             
             const newEv = {
               id: genId(),
-              title: ev.title,
+              title: sanitizeString(ev.title),
               date: ev.date,
               time: ev.time || '09:00',
               duration: ev.duration || 60,
-              sub: ev.group || 'WhatsApp',
+              sub: sanitizeString(ev.group || 'WhatsApp'),
               color: ev.color || 'blue',
               recurrence: 'none',
               recurrenceEnd: '',
@@ -69,7 +70,7 @@ export function useWhatsAppSync() {
                 
                 addMessage({ 
                   role: 'ai', 
-                  text: `📱 Added event from ${ev.group || 'WhatsApp'}: "${newEv.title}"` 
+                  text: `📱 Added event from ${newEv.sub}: "${newEv.title}"` 
                 })
               } catch (addErr) {
                 console.error('Failed to add event from WhatsApp:', addErr)
@@ -82,7 +83,7 @@ export function useWhatsAppSync() {
               // Auto-add is disabled, just log the detection
               addMessage({ 
                 role: 'ai', 
-                text: `📱 Detected event from ${ev.group || 'WhatsApp'}: "${ev.title}" (auto-add disabled)` 
+                text: `📱 Detected event from ${newEv.sub}: "${newEv.title}" (auto-add disabled)` 
               })
             }
           }

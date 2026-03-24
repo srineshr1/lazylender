@@ -1,67 +1,74 @@
 import React from 'react'
-import SettingSection from '../../shared/SettingSection'
-import RadioGroup from '../../shared/RadioGroup'
+import { useDarkStore } from '../../../store/useDarkStore'
 import { useSettingsStore } from '../../../store/useSettingsStore'
 
 export default function GeneralTab() {
-  const { timeFormat, weekStartDay, dateFormat, updateSetting } = useSettingsStore()
+  const { isDark } = useDarkStore()
+  const { defaultEventDuration, defaultEventColor, updateSetting } = useSettingsStore()
 
   return (
     <div>
-      <SettingSection title="Time & Date">
-        <RadioGroup
-          label="Time format"
-          description="Choose how times are displayed throughout the app"
-          options={[
-            { value: '12h', label: '12-hour (9:00 AM, 3:30 PM)' },
-            { value: '24h', label: '24-hour (09:00, 15:30)' },
-          ]}
-          value={timeFormat}
-          onChange={(value) => updateSetting('timeFormat', value)}
-          disabled={true}
-        />
+      <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
+        isDark ? 'text-gray-500' : 'text-gray-400'
+      }`}>
+        Event Defaults
+      </div>
 
-        <RadioGroup
-          label="Week start day"
-          description="First day of the week in calendar views"
-          options={[
-            { value: 'sunday', label: 'Sunday' },
-            { value: 'monday', label: 'Monday' },
-            { value: 'saturday', label: 'Saturday' },
-          ]}
-          value={weekStartDay}
-          onChange={(value) => updateSetting('weekStartDay', value)}
-          layout="horizontal"
-          disabled={true}
-        />
+      <div className="space-y-5">
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Default Duration
+            </p>
+            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              Pre-filled when creating events
+            </p>
+          </div>
+          <select
+            value={defaultEventDuration}
+            onChange={(e) => updateSetting('defaultEventDuration', parseInt(e.target.value))}
+            className={`px-3 py-1.5 rounded-lg text-[13px] border outline-none transition-colors ${
+              isDark
+                ? 'bg-[#252340] border-white/10 text-gray-200 focus:border-white/30'
+                : 'bg-white border-gray-200 text-gray-700 focus:border-gray-400'
+            }`}
+          >
+            <option value={15}>15 min</option>
+            <option value={30}>30 min</option>
+            <option value={60}>1 hour</option>
+            <option value={90}>1.5 hours</option>
+            <option value={120}>2 hours</option>
+          </select>
+        </div>
 
-        <RadioGroup
-          label="Date format"
-          description="Choose how dates are displayed"
-          options={[
-            { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (12/31/2024)' },
-            { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY (31/12/2024)' },
-            { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (2024-12-31)' },
-          ]}
-          value={dateFormat}
-          onChange={(value) => updateSetting('dateFormat', value)}
-          disabled={true}
-        />
-      </SettingSection>
-
-      <SettingSection title="Language">
-        <RadioGroup
-          label="Display language"
-          description="More languages coming soon"
-          options={[
-            { value: 'en', label: 'English' },
-          ]}
-          value="en"
-          onChange={() => {}}
-          layout="horizontal"
-          disabled={true}
-        />
-      </SettingSection>
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              Default Color
+            </p>
+            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              Color for new events
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {['pink', 'green', 'blue', 'amber', 'gray'].map((color) => (
+              <button
+                key={color}
+                onClick={() => updateSetting('defaultEventColor', color)}
+                className={`w-6 h-6 rounded-md transition-all ${
+                  defaultEventColor === color ? 'ring-2 ring-offset-1 ring-gray-400 scale-110' : ''
+                } ${
+                  color === 'pink' ? 'bg-pink-200' :
+                  color === 'green' ? 'bg-green-200' :
+                  color === 'blue' ? 'bg-blue-200' :
+                  color === 'amber' ? 'bg-amber-200' :
+                  'bg-gray-200'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -48,3 +48,6 @@ global.console = {
   error: vi.fn(),
   warn: vi.fn(),
 }
+
+// Mock scrollIntoView (not available in jsdom)
+Element.prototype.scrollIntoView = vi.fn()

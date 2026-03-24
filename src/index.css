@@ -75,3 +75,123 @@ html, body, #root {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Accessibility: Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible styles for keyboard navigation */
+.focus-visible:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-accent, #9880cc);
+  outline-offset: 2px;
+}
+
+/* Skip link - visible only on focus */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 100;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Fade in animation for overlays */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fadeIn { animation: fadeIn 0.2s ease forwards; }
+
+/* Mobile safe area for bottom navigation (iOS notch) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* Touch-friendly tap targets (minimum 44x44 for accessibility) */
+@media (max-width: 767px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Larger touch targets for event blocks on mobile */
+  .event-block-mobile {
+    min-height: 48px;
+    padding: 8px 10px;
+  }
+  
+  /* Prevent text selection on mobile drag */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
+/* Hide scrollbars on mobile but keep functionality */
+@media (max-width: 767px) {
+  .mobile-scroll-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-scroll-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Compact calendar view for small screens */
+@media (max-width: 640px) {
+  .calendar-compact .hour-label {
+    font-size: 10px;
+    width: 32px;
+  }
+  
+  .calendar-compact .event-text {
+    font-size: 11px;
+  }
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-sidebar {
+    width: 220px;
+    min-width: 220px;
+  }
+}

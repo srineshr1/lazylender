@@ -1,14 +1,14 @@
 /**
  * Ollama API Client
  * Centralized client for interacting with the Ollama LLM API.
- * Handles all HTTP communication, error handling, and response parsing for Ollama.
+ * Handles all HTTP communication, error handling, response parsing, timeout, and retry logic.
  */
 
 const OLLAMA_URL = import.meta.env.VITE_OLLAMA_URL || 'http://localhost:11434'
+const REQUEST_TIMEOUT = 30000
+const RETRY_DELAYS = [0, 2000, 5000]
+const MAX_RETRIES = 3
 
-/**
- * Custom error class for Ollama-specific errors
- */
 export class OllamaError extends Error {
   constructor(message, status, originalError) {
     super(message)
@@ -18,25 +18,129 @@ export class OllamaError extends Error {
   }
 }
 
-/**
- * Generate text using Ollama API
- * 
- * @param {Object} options - Generation options
- * @param {string} options.model - Model name (e.g., 'llama3.2:3b')
- * @param {string} options.prompt - Prompt text to send to the model
- * @param {boolean} [options.stream=false] - Whether to stream the response
- * @param {Object} [options.options] - Additional Ollama options (temperature, etc.)
- * @returns {Promise<Object>} Response from Ollama API with 'response' field
- * @throws {OllamaError} If the request fails or returns an error
- * 
- * @example
- * const response = await generateText({
- *   model: 'llama3.2:3b',
- *   prompt: 'What is the capital of France?',
- *   options: { temperature: 0.1 }
- * })
- * console.log(response.response) // "Paris is the capital of France..."
- */
+async function fetchWithTimeout(url, options, timeout) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
+  
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    return res
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+async function generateTextWithRetry({ model, prompt, stream = false, options = {}, attempt = 0 }) {
+  let lastError
+  
+  for (let i = attempt; i < MAX_RETRIES; i++) {
+    try {
+      const res = await fetchWithTimeout(
+        `${OLLAMA_URL}/api/generate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, prompt, stream, options }),
+        },
+        REQUEST_TIMEOUT
+      )
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new OllamaError(
+            `Model "${model}" not found. Try: ollama pull ${model}`,
+            404,
+            null
+          )
+        } else if (res.status === 500) {
+          throw new OllamaError(
+            'Ollama server error. Try restarting: ollama serve',
+            500,
+            null
+          )
+        } else {
+          throw new OllamaError(
+            `HTTP ${res.status}: ${res.statusText}`,
+            res.status,
+            null
+          )
+        }
+      }
+
+      let data
+      try {
+        data = await res.json()
+      } catch (parseErr) {
+        throw new OllamaError(
+          'Invalid response from Ollama server',
+          null,
+          parseErr
+        )
+      }
+
+      if (!data.response && data.response !== '') {
+        throw new OllamaError(
+          'Ollama response missing "response" field',
+          null,
+          null
+        )
+      }
+
+      return data
+    } catch (err) {
+      lastError = err
+      
+      if (err instanceof OllamaError) {
+        if (err.status === 404 || err.status === 400) {
+          throw err
+        }
+      }
+      
+      if (err.name === 'AbortError' || err.message.includes('timeout')) {
+        const delay = RETRY_DELAYS[i]
+        if (delay > 0 && i < MAX_RETRIES - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay))
+          continue
+        }
+        throw new OllamaError(
+          'Request timed out. Ollama may be overloaded or the model is too slow.',
+          null,
+          err
+        )
+      }
+      
+      if (i < MAX_RETRIES - 1) {
+        const delay = RETRY_DELAYS[i]
+        if (delay > 0) {
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+        continue
+      }
+    }
+  }
+  
+  if (lastError instanceof OllamaError) {
+    throw lastError
+  }
+  
+  if (lastError?.message?.includes('Failed to fetch') || lastError?.message?.includes('NetworkError')) {
+    throw new OllamaError(
+      'Failed to connect to Ollama. Make sure Ollama is running (ollama serve)',
+      null,
+      lastError
+    )
+  }
+  
+  throw new OllamaError(
+    lastError?.message || 'Unknown error occurred while connecting to Ollama',
+    null,
+    lastError
+  )
+}
+
 export async function generateText({ model, prompt, stream = false, options = {} }) {
   if (!model) {
     throw new OllamaError('Model name is required', null, null)
@@ -45,94 +149,7 @@ export async function generateText({ model, prompt, stream = false, options = {}
     throw new OllamaError('Prompt is required', null, null)
   }
 
-  try {
-    const res = await fetch(`${OLLAMA_URL}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        model, 
-        prompt,
-        stream,
-        options
-      }),
-    })
-
-    // Handle HTTP errors with specific messages
-    if (!res.ok) {
-      if (res.status === 404) {
-        throw new OllamaError(
-          `Model "${model}" not found. Try: ollama pull ${model}`,
-          404,
-          null
-        )
-      } else if (res.status === 500) {
-        throw new OllamaError(
-          'Ollama server error. Try restarting: ollama serve',
-          500,
-          null
-        )
-      } else {
-        throw new OllamaError(
-          `HTTP ${res.status}: ${res.statusText}`,
-          res.status,
-          null
-        )
-      }
-    }
-
-    // Parse response safely
-    let data
-    try {
-      data = await res.json()
-    } catch (parseErr) {
-      throw new OllamaError(
-        'Invalid response from Ollama server',
-        null,
-        parseErr
-      )
-    }
-
-    // Validate response has required fields
-    if (!data.response && data.response !== '') {
-      throw new OllamaError(
-        'Ollama response missing "response" field',
-        null,
-        null
-      )
-    }
-
-    return data
-  } catch (err) {
-    // If it's already an OllamaError, rethrow it
-    if (err instanceof OllamaError) {
-      throw err
-    }
-
-    // Handle network errors
-    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-      throw new OllamaError(
-        'Failed to connect to Ollama. Make sure Ollama is running (ollama serve)',
-        null,
-        err
-      )
-    }
-
-    // Handle timeout errors
-    if (err.name === 'AbortError' || err.message.includes('timeout')) {
-      throw new OllamaError(
-        'Request timed out. Ollama may be overloaded or the model is too slow.',
-        null,
-        err
-      )
-    }
-
-    // Unknown error
-    throw new OllamaError(
-      err.message || 'Unknown error occurred while connecting to Ollama',
-      null,
-      err
-    )
-  }
+  return generateTextWithRetry({ model, prompt, stream, options })
 }
 
 /**
@@ -148,9 +165,7 @@ export async function generateText({ model, prompt, stream = false, options = {}
  */
 export async function checkHealth() {
   try {
-    const res = await fetch(`${OLLAMA_URL}/api/tags`, {
-      method: 'GET',
-    })
+    const res = await fetchWithTimeout(`${OLLAMA_URL}/api/tags`, { method: 'GET' }, 5000)
     return res.ok
   } catch {
     return false
@@ -169,9 +184,7 @@ export async function checkHealth() {
  */
 export async function listModels() {
   try {
-    const res = await fetch(`${OLLAMA_URL}/api/tags`, {
-      method: 'GET',
-    })
+    const res = await fetchWithTimeout(`${OLLAMA_URL}/api/tags`, { method: 'GET' }, REQUEST_TIMEOUT)
 
     if (!res.ok) {
       throw new OllamaError(

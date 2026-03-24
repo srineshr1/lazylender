@@ -1,5 +1,4 @@
 {
-  "connected": true,
-  "qr": null,
-  "message": "Connected!"
+  "connected": false,
+  "qr": "2@nKWJ28IiDj2dR80hzqZTbMa5cFTV0zW8G8jMxxc1IoXQ9V0M3AvUk6YAV8+UhwDpwK4QVy9KNwIznzGY+LjvF9RtV875imkLyyE=,78tebegCFZPyGUFZt78oJiueO52eV85i1MikuiflFjM=,5e8AVQ/P7gyqOQrFZJyU2PBc4Ka+QvWz0clDp7zri0c=,ZslRCr0Mr5K1CgouAqugBD0KeckPXu1Ax+pAnazAprY=,1"
 }
