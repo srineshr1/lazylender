@@ -11,7 +11,7 @@ import {
 
 export default function WhatsAppTab() {
   const { isDark } = useDarkStore()
-  const { whatsappPollInterval, whatsappAutoAdd, updateSetting } = useSettingsStore()
+  const { whatsappPollInterval, whatsappAutoAdd, savingKeys, updateSetting } = useSettingsStore()
   const [connecting, setConnecting] = useState(false)
   const [qrCode, setQrCode] = useState(null)
   const [isConnected, setIsConnected] = useState(false)
@@ -113,25 +113,21 @@ export default function WhatsAppTab() {
       )}
 
       {/* Connection Status */}
-      <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
-        isDark ? 'text-gray-500' : 'text-gray-400'
-      }`}>
+      <div className="text-[11px] font-semibold uppercase tracking-wider mb-4 theme-text-secondary">
         Connection Status
       </div>
 
-      <div className={`p-4 rounded-xl mb-6 ${
-        isDark ? 'bg-white/[0.05]' : 'bg-gray-50'
-      }`}>
+      <div className="p-4 rounded-xl mb-6 theme-surface-alt border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${
               isConnected ? 'bg-green-500' : 'bg-red-500'
             }`} />
             <div>
-              <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+              <p className="text-[13px] font-medium theme-text-primary">
                 {isConnected ? 'Connected to WhatsApp' : sessionStatus === 'CONNECTING' ? 'Connecting...' : 'Not Connected'}
               </p>
-              <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              <p className="text-[12px] mt-0.5 theme-text-secondary">
                 {isConnected ? 'Ready to sync messages' : sessionStatus === 'QR_READY' ? 'Scan QR code below' : 'Click Connect to start'}
               </p>
             </div>
@@ -139,7 +135,7 @@ export default function WhatsAppTab() {
           {isConnected && (
             <button
               onClick={handleDisconnect}
-              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors press-feedback ${
                 isDark 
                   ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' 
                   : 'bg-red-50 hover:bg-red-100 text-red-600'
@@ -157,7 +153,7 @@ export default function WhatsAppTab() {
           <button
             onClick={handleConnect}
             disabled={connecting}
-            className={`w-full py-3 rounded-xl text-[13px] font-medium transition-colors ${
+            className={`w-full py-3 rounded-xl text-[13px] font-medium transition-colors press-feedback ${
               connecting ? 'opacity-50 cursor-not-allowed' : ''
             } ${
               isDark
@@ -173,14 +169,10 @@ export default function WhatsAppTab() {
       {/* QR Code Section */}
       {!isConnected && sessionStatus === 'QR_READY' && qrCode && (
         <div className="mb-6">
-          <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
-            isDark ? 'text-gray-500' : 'text-gray-400'
-          }`}>
+          <div className="text-[11px] font-semibold uppercase tracking-wider mb-4 theme-text-secondary">
             Scan to Connect
           </div>
-          <div className={`p-6 rounded-xl text-center ${
-            isDark ? 'bg-white/[0.05]' : 'bg-gray-50'
-          }`}>
+          <div className="p-6 rounded-xl text-center theme-surface-alt border">
             <div className="bg-white p-4 rounded-lg inline-block mb-4">
               <img 
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCode)}`}
@@ -188,7 +180,7 @@ export default function WhatsAppTab() {
                 className="w-48 h-48"
               />
             </div>
-            <p className={`text-[12px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className="text-[12px] theme-text-secondary">
               Open WhatsApp on your phone → Settings → Linked Devices → Link a Device
             </p>
           </div>
@@ -199,15 +191,13 @@ export default function WhatsAppTab() {
       {isConnected && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <div className={`text-[11px] font-semibold uppercase tracking-wider ${
-              isDark ? 'text-gray-500' : 'text-gray-400'
-            }`}>
+            <div className="text-[11px] font-semibold uppercase tracking-wider theme-text-secondary">
               WhatsApp Groups ({groups.length})
             </div>
             <button
               onClick={fetchGroups}
               disabled={loadingGroups}
-              className={`text-[11px] px-3 py-1 rounded-lg ${
+              className={`text-[11px] px-3 py-1 rounded-lg press-feedback ${
                 isDark 
                   ? 'bg-white/10 hover:bg-white/15 text-gray-300' 
                   : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
@@ -217,9 +207,7 @@ export default function WhatsAppTab() {
             </button>
           </div>
           
-          <div className={`rounded-xl overflow-hidden max-h-64 overflow-y-auto custom-scrollbar ${
-            isDark ? 'bg-white/[0.03]' : 'bg-gray-50'
-          }`}>
+          <div className="rounded-xl overflow-hidden max-h-64 overflow-y-auto custom-scrollbar theme-surface-alt border">
             {groups.length === 0 ? (
               <div className={`p-6 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 <p className="text-[13px]">No groups found</p>
@@ -242,10 +230,10 @@ export default function WhatsAppTab() {
                       </svg>
                     </div>
                     <div>
-                      <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                      <p className="text-[13px] font-medium theme-text-primary">
                         {group.name}
                       </p>
-                      <p className={`text-[11px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <p className="text-[11px] theme-text-secondary">
                         {group.participantCount} participant{group.participantCount !== 1 ? 's' : ''}
                       </p>
                     </div>
@@ -258,28 +246,27 @@ export default function WhatsAppTab() {
       )}
 
       {/* Settings */}
-      <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
-        isDark ? 'text-gray-500' : 'text-gray-400'
-      }`}>
+      <div className="text-[11px] font-semibold uppercase tracking-wider mb-4 theme-text-secondary">
         Settings
       </div>
 
       <div className="space-y-5">
         <div className="flex items-center justify-between py-2">
           <div>
-            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <p className="text-[13px] font-medium theme-text-primary">
               Auto-add Events
             </p>
-            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+            <p className="text-[12px] mt-0.5 theme-text-secondary">
               Automatically create events from messages
             </p>
           </div>
           <button
             onClick={() => updateSetting('whatsappAutoAdd', !whatsappAutoAdd)}
-            className={`relative w-10 h-5 rounded-full transition-colors ${
+            disabled={savingKeys.whatsappAutoAdd}
+            className={`relative w-10 h-5 rounded-full transition-colors press-feedback ${
               whatsappAutoAdd 
-                ? 'bg-accent' 
-                : isDark ? 'bg-white/20' : 'bg-gray-300'
+                ? 'theme-toggle-on' 
+                : 'theme-toggle'
             }`}
           >
             <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
@@ -290,21 +277,18 @@ export default function WhatsAppTab() {
 
         <div className="flex items-center justify-between py-2">
           <div>
-            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <p className="text-[13px] font-medium theme-text-primary">
               Poll Interval
             </p>
-            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+            <p className="text-[12px] mt-0.5 theme-text-secondary">
               How often to check for messages
             </p>
           </div>
           <select
             value={whatsappPollInterval}
             onChange={(e) => updateSetting('whatsappPollInterval', parseInt(e.target.value))}
-            className={`px-3 py-1.5 rounded-lg text-[13px] border outline-none transition-colors ${
-              isDark
-                ? 'bg-[#252340] border-white/10 text-gray-200 focus:border-white/30'
-                : 'bg-white border-gray-200 text-gray-700 focus:border-gray-400'
-            }`}
+            disabled={savingKeys.whatsappPollInterval}
+            className="px-3 py-1.5 rounded-lg text-[13px] outline-none theme-control press-feedback"
           >
             <option value={10}>10 seconds</option>
             <option value={30}>30 seconds</option>

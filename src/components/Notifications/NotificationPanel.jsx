@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react'
 import NotificationItem from './NotificationItem'
-import { useDarkStore } from '../../store/useDarkStore'
 import { useNotificationStore } from '../../store/useNotificationStore'
 import { useEventStore } from '../../store/useEventStore'
 
@@ -46,7 +45,6 @@ const groupNotificationsByDate = (notifications) => {
  * Displays as a bubble below the bell icon
  */
 export default function NotificationPanel() {
-  const { isDark } = useDarkStore()
   const { notifications, clearAll, closePanel } = useNotificationStore()
   const { jumpToDate, events } = useEventStore()
   const panelRef = useRef(null)
@@ -85,33 +83,21 @@ export default function NotificationPanel() {
   return (
     <div
       ref={panelRef}
-      className={`absolute top-full right-0 mt-2 w-[380px] max-h-[480px] rounded-2xl shadow-2xl overflow-hidden animate-slide-down z-50 ${
-        isDark
-          ? 'bg-[#1f1d30] border border-white/10'
-          : 'bg-white border border-black/10'
-      }`}
+      className="absolute top-full right-0 mt-2 w-[380px] max-h-[480px] rounded-2xl shadow-2xl overflow-hidden animate-slide-down z-50 glass-panel"
     >
       {/* Header */}
       <div
-        className={`px-4 py-3 border-b flex items-center justify-between ${
-          isDark ? 'border-white/10' : 'border-gray-200'
-        }`}
+        className="px-4 py-3 border-b border-[color:var(--theme-border)] flex items-center justify-between"
       >
         <h3
-          className={`text-[15px] font-semibold ${
-            isDark ? 'text-gray-100' : 'text-gray-900'
-          }`}
+          className="text-[15px] font-semibold theme-text-primary"
         >
           Notifications
         </h3>
         {hasNotifications && (
           <button
             onClick={clearAll}
-            className={`text-[12px] font-medium transition-colors ${
-              isDark
-                ? 'text-gray-400 hover:text-gray-200'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            className="text-[12px] font-medium transition-colors theme-text-secondary theme-hover-text"
           >
             Clear all
           </button>
@@ -125,16 +111,12 @@ export default function NotificationPanel() {
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <div className="text-5xl mb-3">🎉</div>
             <p
-              className={`text-[14px] font-medium ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}
+              className="text-[14px] font-medium theme-text-primary"
             >
               All caught up!
             </p>
             <p
-              className={`text-[12px] mt-1 ${
-                isDark ? 'text-gray-600' : 'text-gray-500'
-              }`}
+              className="text-[12px] mt-1 theme-text-secondary"
             >
               No new notifications
             </p>
@@ -145,9 +127,7 @@ export default function NotificationPanel() {
             {grouped.today.length > 0 && (
               <div>
                 <div
-                  className={`px-4 py-2 text-[11px] font-semibold uppercase tracking-wide ${
-                    isDark ? 'text-gray-600' : 'text-gray-400'
-                  }`}
+                  className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide theme-text-secondary"
                 >
                   Today
                 </div>
@@ -164,9 +144,7 @@ export default function NotificationPanel() {
             {grouped.yesterday.length > 0 && (
               <div>
                 <div
-                  className={`px-4 py-2 text-[11px] font-semibold uppercase tracking-wide ${
-                    isDark ? 'text-gray-600' : 'text-gray-400'
-                  }`}
+                  className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide theme-text-secondary"
                 >
                   Yesterday
                 </div>
@@ -183,9 +161,7 @@ export default function NotificationPanel() {
             {grouped.older.length > 0 && (
               <div>
                 <div
-                  className={`px-4 py-2 text-[11px] font-semibold uppercase tracking-wide ${
-                    isDark ? 'text-gray-600' : 'text-gray-400'
-                  }`}
+                  className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wide theme-text-secondary"
                 >
                   Older
                 </div>

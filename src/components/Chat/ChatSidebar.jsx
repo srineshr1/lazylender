@@ -1,27 +1,26 @@
 import React, { useRef, useEffect, useState, useId } from 'react'
 import { useChatStore } from '../../store/useChatStore'
-import { useDarkStore } from '../../store/useDarkStore'
 import { useLLM } from './useLLM'
 
 function TypingDots() {
   return (
     <div className="flex gap-1 py-1" role="status" aria-label="AI is typing">
-      <span className="w-1.5 h-1.5 rounded-full bg-gray-500 dot-bounce" aria-hidden="true" />
-      <span className="w-1.5 h-1.5 rounded-full bg-gray-500 dot-bounce-2" aria-hidden="true" />
-      <span className="w-1.5 h-1.5 rounded-full bg-gray-500 dot-bounce-3" aria-hidden="true" />
+      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce" aria-hidden="true" />
+      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce-2" aria-hidden="true" />
+      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce-3" aria-hidden="true" />
     </div>
   )
 }
 
-function ChatMessage({ msg, isDark }) {
+function ChatMessage({ msg }) {
   if (msg.role === 'system') {
     return (
       <div 
-        className={`py-3 border-b ${isDark ? 'border-white/[0.05]' : 'border-gray-200'}`}
+        className="py-3 border-b border-[color:var(--theme-border)]"
         role="status"
         aria-live="polite"
       >
-        <div className={`text-center text-xs leading-relaxed ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+        <div className="text-center text-xs leading-relaxed theme-text-secondary">
           {msg.text}
         </div>
       </div>
@@ -31,12 +30,12 @@ function ChatMessage({ msg, isDark }) {
   if (msg.role === 'user') {
     return (
       <article 
-        className={`py-3 border-b animate-fadeUp ${isDark ? 'border-white/[0.05]' : 'border-gray-200'}`}
+        className="py-3 border-b border-[color:var(--theme-border)] animate-fadeUp"
         aria-label="Your message"
       >
             <div className="flex flex-col items-end">
           <div className="max-w-[85%] border-l-2 border-accent/40 pl-3">
-            <div className={`text-[13px] leading-relaxed font-sans ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <div className="text-[13px] leading-relaxed font-sans theme-text-primary">
               {msg.text}
             </div>
           </div>
@@ -47,12 +46,12 @@ function ChatMessage({ msg, isDark }) {
   
   return (
     <article 
-      className={`py-3 border-b animate-fadeUp ${isDark ? 'border-white/[0.05]' : 'border-gray-200'}`}
+      className="py-3 border-b border-[color:var(--theme-border)] animate-fadeUp"
       aria-label="AI response"
     >
       <div className="flex flex-col">
         <div className="text-[9.5px] font-semibold text-accent uppercase tracking-widest mb-1.5" aria-hidden="true">AI</div>
-        <div className={`text-[13px] leading-relaxed font-sans ${isDark ? 'text-gray-200' : 'text-gray-700'}`} style={{ whiteSpace: 'pre-wrap' }}>
+        <div className="text-[13px] leading-relaxed font-sans theme-text-primary" style={{ whiteSpace: 'pre-wrap' }}>
           {msg.text}
         </div>
       </div>
@@ -62,7 +61,6 @@ function ChatMessage({ msg, isDark }) {
 
 export default function ChatSidebar({ onClose }) {
   const { messages, isTyping, isOnline } = useChatStore()
-  const { isDark } = useDarkStore()
   const { send } = useLLM()
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -104,26 +102,24 @@ export default function ChatSidebar({ onClose }) {
 
   return (
     <aside 
-      className={`w-80 min-w-[320px] flex-shrink-0 border flex flex-col rounded-2xl shadow-2xl overflow-hidden ${
-        isDark ? 'bg-chat border-white/[0.07]' : 'bg-white border-gray-200'
-      }`}
+      className="w-80 min-w-[320px] h-[600px] max-h-[85vh] flex-shrink-0 border flex flex-col rounded-2xl shadow-2xl overflow-hidden glass-panel"
       role="complementary"
       aria-label="AI chat assistant"
     >
       {/* Header */}
-      <header className={`px-4 pt-4 pb-3 border-b flex-shrink-0 flex items-center justify-between ${isDark ? 'border-white/[0.07]' : 'border-gray-200'}`}>
+      <header className="px-4 pt-4 pb-3 border-b border-[color:var(--theme-border)] flex-shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span 
             className={`w-2 h-2 rounded-full flex-shrink-0 ${onlineDot}`} 
             role="status"
             aria-label={`AI assistant status: ${onlineStatus}`}
           />
-          <span className={`font-display text-[18px] tracking-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>AI</span>
+          <span className="font-display text-[18px] tracking-tight theme-text-primary">AI</span>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className={`p-1.5 rounded-lg hover:bg-accent/20 transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`}
+            className="p-1.5 rounded-lg theme-icon-btn"
             aria-label="Close chat"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,9 +138,9 @@ export default function ChatSidebar({ onClose }) {
         aria-live="polite"
         aria-relevant="additions"
       >
-        {messages.map((m) => <ChatMessage key={m.id} msg={m} isDark={isDark} />)}
+        {messages.map((m) => <ChatMessage key={m.id} msg={m} />)}
         {isTyping && (
-          <div className={`py-3 border-b animate-fadeUp ${isDark ? 'border-white/[0.05]' : 'border-gray-200'}`}>
+          <div className="py-3 border-b border-[color:var(--theme-border)] animate-fadeUp">
             <div className="text-[9.5px] font-semibold text-accent uppercase tracking-widest mb-1.5" aria-hidden="true">AI</div>
             <TypingDots />
           </div>
@@ -154,16 +150,12 @@ export default function ChatSidebar({ onClose }) {
 
       {/* Input */}
       <div className="px-4 pb-4 pt-2 flex-shrink-0">
-        <div className={`flex items-center gap-2 border rounded-lg px-3 py-1.5 focus-within:border-accent/50 transition-colors ${
-          isDark ? 'bg-white/[0.07] border-white/10' : 'bg-gray-100 border-gray-200'
-        }`}>
+        <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 focus-within:border-accent/50 transition-colors glass-subtle">
           <label htmlFor="chat-input" className="sr-only">Message to AI assistant</label>
           <textarea
             id="chat-input"
             ref={textareaRef}
-            className={`flex-1 bg-transparent border-none outline-none text-[13px] placeholder-gray-400 resize-none min-h-[20px] max-h-24 leading-relaxed font-sans ${
-              isDark ? 'text-gray-200' : 'text-gray-700'
-            }`}
+            className="flex-1 bg-transparent border-none outline-none text-[13px] theme-text-primary placeholder:text-[color:var(--theme-text-secondary)] resize-none min-h-[20px] max-h-24 leading-relaxed font-sans"
             placeholder="Ask about your calendar…"
             value={input}
             onChange={handleTextarea}
@@ -172,9 +164,7 @@ export default function ChatSidebar({ onClose }) {
             aria-describedby="chat-input-hint"
           />
           <button
-            className={`hover:text-accent disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0 text-lg ${
-              isDark ? 'text-gray-400' : 'text-gray-500'
-            }`}
+            className="hover:text-accent disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0 text-lg theme-text-secondary"
             onClick={handleSend}
             disabled={sending || !input.trim()}
             aria-label={sending ? 'Sending message...' : 'Send message'}
@@ -182,7 +172,7 @@ export default function ChatSidebar({ onClose }) {
             <span aria-hidden="true">↑</span>
           </button>
         </div>
-        <p id="chat-input-hint" className={`text-[10.5px] text-center mt-1.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Enter to send · Shift+Enter for new line</p>
+        <p id="chat-input-hint" className="text-[10.5px] text-center mt-1.5 theme-text-secondary">Enter to send · Shift+Enter for new line</p>
       </div>
     </aside>
   )

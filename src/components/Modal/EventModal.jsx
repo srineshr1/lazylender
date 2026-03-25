@@ -6,11 +6,11 @@ import { createFocusTrap, KEYS, announce } from '../../lib/accessibility'
 import LoadingSpinner from '../LoadingSpinner'
 
 const COLORS = [
-  { key: 'pink',  bg: '#f0e8f5', label: 'Pink' },
-  { key: 'green', bg: '#e8f5ee', label: 'Green' },
-  { key: 'blue',  bg: '#e8eef5', label: 'Blue' },
-  { key: 'amber', bg: '#f5f0e8', label: 'Amber' },
-  { key: 'gray',  bg: '#f2f2f2', label: 'Gray' },
+  { key: 'pink',  bg: '#f8e9f0', border: '#e8b3d0', label: 'Pink' },
+  { key: 'green', bg: '#e8f4ec', border: '#b3dfc4', label: 'Green' },
+  { key: 'blue',  bg: '#e8edf8', border: '#b3c7ed', label: 'Blue' },
+  { key: 'amber', bg: '#f8f0e2', border: '#ead9b8', label: 'Amber' },
+  { key: 'gray',  bg: '#ececf0', border: '#d1d1d9', label: 'Gray' },
 ]
 
 const RECURRENCE = ['none', 'daily', 'weekly', 'monthly']
@@ -228,13 +228,13 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
     >
       <div 
         ref={modalRef}
-        className="bg-white dark:bg-[#1f1d30] rounded-2xl p-6 w-[400px] shadow-2xl animate-modalIn"
+        className="rounded-2xl p-6 w-[420px] max-h-[90vh] overflow-y-auto shadow-2xl animate-modalIn glass-panel"
         role="document"
       >
         {showRecurringPrompt ? (
           <>
-            <h3 id={modalTitleId} className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-2">Edit recurring event</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">This is a recurring event. What would you like to edit?</p>
+            <h3 id={modalTitleId} className="text-base font-semibold theme-text-primary mb-2">Edit recurring event</h3>
+            <p className="text-sm theme-text-secondary mb-5">This is a recurring event. What would you like to edit?</p>
             {validationErrors.general && (
               <p className="text-xs text-red-500 mb-3 text-center" role="alert">{validationErrors.general}</p>
             )}
@@ -242,39 +242,39 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
               <button 
                 onClick={() => handleRecurringChoice(false)}
                 disabled={isSaving}
-                className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                className="px-4 py-2.5 rounded-xl border theme-control text-sm theme-text-primary transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 {isSaving && <LoadingSpinner size="sm" />}
                 This event only
               </button>
               <button 
                 onClick={() => handleRecurringChoice(true)}
                 disabled={isSaving}
-                className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                className="px-4 py-2.5 rounded-xl border theme-control text-sm theme-text-primary transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 {isSaving && <LoadingSpinner size="sm" />}
                 All future occurrences
               </button>
               <button 
                 onClick={() => setShowRecurringPrompt(false)}
                 disabled={isSaving}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                className="px-4 py-2 text-sm theme-text-secondary theme-hover-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Cancel
               </button>
             </div>
           </>
         ) : (
           <>
-            <h3 id={modalTitleId} className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+            <h3 id={modalTitleId} className="text-lg font-bold theme-text-primary mb-5">
               {modalTitle}
             </h3>
 
             {/* Title */}
-            <div className="mb-3">
-              <label htmlFor="event-title" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Title</label>
+            <div className="mb-4">
+              <label htmlFor="event-title" className="block text-sm font-semibold theme-text-primary mb-2">Title</label>
               <input
                 ref={titleInputRef}
                 id="event-title"
                 type="text"
-                className={`w-full border ${validationErrors.title ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'} dark:bg-[#252340] rounded-xl px-3 py-2 text-[13.5px] text-gray-800 dark:text-gray-200 outline-none focus:border-accent transition-colors font-sans`}
+                className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.title ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary placeholder:text-[color:var(--theme-text-secondary)]/40`}
                 placeholder="Event title…"
                 value={form.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
@@ -284,18 +284,18 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                 aria-describedby={validationErrors.title ? 'title-error' : undefined}
               />
               {validationErrors.title && (
-                <p id="title-error" className="text-xs text-red-500 mt-1" role="alert">{validationErrors.title}</p>
+                <p id="title-error" className="text-xs text-red-500 mt-1.5" role="alert">{validationErrors.title}</p>
               )}
             </div>
 
             {/* Date + Time */}
-            <div className="flex gap-3 mb-3">
+            <div className="flex gap-3 mb-4">
               <div className="flex-1">
-                <label htmlFor="event-date" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Date</label>
+                <label htmlFor="event-date" className="block text-sm font-semibold theme-text-primary mb-2">Date</label>
                 <input 
                   type="date"
                   id="event-date"
-                  className={`w-full border ${validationErrors.date ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'} dark:bg-[#252340] rounded-xl px-3 py-2 text-[13px] text-gray-800 dark:text-gray-200 outline-none focus:border-accent transition-colors font-sans`}
+                  className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.date ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary`}
                   value={form.date}
                   onChange={(e) => set('date', e.target.value)}
                   aria-required="true"
@@ -303,15 +303,15 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                   aria-describedby={validationErrors.date ? 'date-error' : undefined}
                 />
                 {validationErrors.date && (
-                  <p id="date-error" className="text-xs text-red-500 mt-1" role="alert">{validationErrors.date}</p>
+                  <p id="date-error" className="text-xs text-red-500 mt-1.5" role="alert">{validationErrors.date}</p>
                 )}
               </div>
               <div className="flex-1">
-                <label htmlFor="event-time" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Time</label>
+                <label htmlFor="event-time" className="block text-sm font-semibold theme-text-primary mb-2">Time</label>
                 <input 
                   type="time"
                   id="event-time"
-                  className={`w-full border ${validationErrors.time ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'} dark:bg-[#252340] rounded-xl px-3 py-2 text-[13px] text-gray-800 dark:text-gray-200 outline-none focus:border-accent transition-colors font-sans`}
+                  className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.time ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary`}
                   value={form.time}
                   onChange={(e) => set('time', e.target.value)}
                   aria-required="true"
@@ -319,19 +319,19 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                   aria-describedby={validationErrors.time ? 'time-error' : undefined}
                 />
                 {validationErrors.time && (
-                  <p id="time-error" className="text-xs text-red-500 mt-1" role="alert">{validationErrors.time}</p>
+                  <p id="time-error" className="text-xs text-red-500 mt-1.5" role="alert">{validationErrors.time}</p>
                 )}
               </div>
             </div>
 
             {/* Duration + Sub */}
-            <div className="flex gap-3 mb-3">
+            <div className="flex gap-3 mb-4">
               <div className="flex-1">
-                <label htmlFor="event-duration" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Duration (min)</label>
+                <label htmlFor="event-duration" className="block text-sm font-semibold theme-text-primary mb-2">Duration (min)</label>
                 <input 
                   type="number"
                   id="event-duration"
-                  className={`w-full border ${validationErrors.duration ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'} dark:bg-[#252340] rounded-xl px-3 py-2 text-[13px] text-gray-800 dark:text-gray-200 outline-none focus:border-accent transition-colors font-sans`}
+                  className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.duration ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary`}
                   value={form.duration} 
                   min={15} 
                   step={15}
@@ -339,15 +339,15 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                   aria-describedby={validationErrors.duration ? 'duration-error' : undefined}
                 />
                 {validationErrors.duration && (
-                  <p id="duration-error" className="text-xs text-red-500 mt-1" role="alert">{validationErrors.duration}</p>
+                  <p id="duration-error" className="text-xs text-red-500 mt-1.5" role="alert">{validationErrors.duration}</p>
                 )}
               </div>
               <div className="flex-1">
-                <label htmlFor="event-location" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Location</label>
+                <label htmlFor="event-location" className="block text-sm font-semibold theme-text-primary mb-2">Location</label>
                 <input
                   id="event-location"
                   type="text"
-                  className="w-full border border-gray-200 dark:border-white/10 dark:bg-[#252340] rounded-xl px-3 py-2 text-[13px] text-gray-800 dark:text-gray-200 outline-none focus:border-accent transition-colors font-sans"
+                  className="w-full bg-[color:var(--theme-panel)] border border-[color:var(--theme-border)] rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary placeholder:text-[color:var(--theme-text-secondary)]/40"
                   placeholder="e.g. Zoom, Office…"
                   value={form.sub}
                   onChange={(e) => handleInputChange('sub', e.target.value)}
@@ -356,11 +356,11 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
             </div>
 
             {/* Recurrence */}
-            <div className="mb-3">
-              <label htmlFor="event-recurrence" className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Repeats</label>
+            <div className="mb-5">
+              <label htmlFor="event-recurrence" className="block text-sm font-semibold theme-text-primary mb-2">Repeats</label>
               <select
                 id="event-recurrence"
-                className={`w-full border ${validationErrors.recurrence ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'} dark:bg-[#252340] rounded-xl px-3 py-2 text-[13px] text-gray-700 dark:text-gray-200 outline-none focus:border-accent transition-colors bg-white font-sans`}
+                className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.recurrence ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary`}
                 value={form.recurrence}
                 onChange={(e) => set('recurrence', e.target.value)}
               >
@@ -369,15 +369,15 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                 ))}
               </select>
               {validationErrors.recurrence && (
-                <p className="text-xs text-red-500 mt-1" role="alert">{validationErrors.recurrence}</p>
+                <p className="text-xs text-red-500 mt-1.5" role="alert">{validationErrors.recurrence}</p>
               )}
             </div>
 
             {/* Color */}
-            <div className="mb-5">
-              <span id="color-label" className="block text-xs font-medium text-gray-500 mb-1.5">Color</span>
+            <div className="mb-6">
+              <span id="color-label" className="block text-sm font-semibold theme-text-primary mb-2.5">Color</span>
               <div 
-                className="flex gap-2" 
+                className="flex gap-3" 
                 role="radiogroup" 
                 aria-labelledby="color-label"
               >
@@ -390,19 +390,27 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                       setSelectedColorIndex(index)
                     }}
                     onKeyDown={(e) => handleColorKeyDown(e, index)}
-                    style={{ background: c.bg }}
-                    className={`w-7 h-7 rounded-lg text-sm flex items-center justify-center transition-all hover:scale-110 ${form.color === c.key ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
+                    style={{ 
+                      background: c.bg,
+                      borderColor: form.color === c.key ? 'var(--color-accent)' : c.border
+                    }}
+                    className={`w-11 h-11 rounded-xl border-2 flex items-center justify-center transition-all hover:scale-110 hover:shadow-lg ${form.color === c.key ? 'ring-4 ring-accent/20 shadow-lg scale-105' : ''}`}
                     role="radio"
                     aria-checked={form.color === c.key}
                     aria-label={c.label}
                     tabIndex={form.color === c.key ? 0 : -1}
                   >
+                    {form.color === c.key && (
+                      <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
                     <span className="sr-only">{c.label}</span>
                   </button>
                 ))}
               </div>
               {validationErrors.color && (
-                <p className="text-xs text-red-500 mt-1" role="alert">{validationErrors.color}</p>
+                <p className="text-xs text-red-500 mt-1.5" role="alert">{validationErrors.color}</p>
               )}
             </div>
 
@@ -410,31 +418,31 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
             {validationErrors.general && (
               <p className="text-xs text-red-500 mb-3 text-center" role="alert">{validationErrors.general}</p>
             )}
-            <div className="flex items-center gap-2 justify-end">
+            <div className="flex items-center gap-3 justify-end pt-2">
               {isEditing && (
                 <button
                   onClick={handleDelete}
                   disabled={isSaving}
-                  className="px-4 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 text-[13px] transition-colors mr-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 text-sm font-medium transition-all mr-auto disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   aria-label="Delete event"
                 >
                   {isSaving ? <LoadingSpinner size="sm" /> : 'Delete'}
                 </button>
               )}
-              <button
-                onClick={onClose}
-                disabled={isSaving}
-                className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 text-[13px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
+                <button
+                  onClick={onClose}
+                  disabled={isSaving}
+                  className="px-5 py-2.5 rounded-xl border theme-control theme-text-primary text-sm font-medium transition-all hover:bg-[color:var(--theme-surface)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-5 py-2 rounded-xl bg-sidebar-deep text-white text-[13px] font-medium hover:bg-sidebar transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent/90 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSaving && <LoadingSpinner size="sm" />}
-                Save
+                {isEditing ? 'Update' : 'Create'}
               </button>
             </div>
           </>

@@ -129,9 +129,157 @@ function CalendarApp() {
 
   // Apply all settings whenever they change
   useEffect(() => {
-    // Apply accent color
+    const themePresets = {
+      royal: {
+        light: {
+          surface: '#fcfbf8',
+          surfaceAlt: '#f3efe6',
+          panel: '#ffffff',
+          border: '#dfd4c4',
+          textPrimary: '#2a2a2f',
+          textSecondary: '#686067',
+          eventColors: {
+            pink: { bg: '#f8e9f0', border: '#cc6b95', text: '#4f2238' },
+            green: { bg: '#e8f4ec', border: '#47906b', text: '#1d4b35' },
+            blue: { bg: '#e8edf8', border: '#4f72c7', text: '#1f3569' },
+            amber: { bg: '#f8f0e2', border: '#b9853f', text: '#5b3a12' },
+            gray: { bg: '#ececf0', border: '#7e8093', text: '#2a2c34' },
+          },
+        },
+        dark: {
+          surface: '#16141c',
+          surfaceAlt: '#1f1b28',
+          panel: '#262131',
+          border: '#3a3148',
+          textPrimary: '#f2ecff',
+          textSecondary: '#c3bbd7',
+          eventColors: {
+            pink: { bg: '#3f2733', border: '#d18daf', text: '#ffe7f1' },
+            green: { bg: '#1f3a30', border: '#66b18a', text: '#d8ffec' },
+            blue: { bg: '#1e2f4d', border: '#7ca2f0', text: '#deebff' },
+            amber: { bg: '#41321d', border: '#d3a866', text: '#ffefd9' },
+            gray: { bg: '#2a2b35', border: '#a5a8bd', text: '#f0f2ff' },
+          },
+        },
+      },
+      emerald: {
+        light: {
+          surface: '#f8fbf5',
+          surfaceAlt: '#eaf3e3',
+          panel: '#ffffff',
+          border: '#cdddc3',
+          textPrimary: '#1f2c24',
+          textSecondary: '#5a6f63',
+          eventColors: {
+            pink: { bg: '#f8ecef', border: '#c57f92', text: '#4f2a34' },
+            green: { bg: '#e5f6ec', border: '#3f9968', text: '#165035' },
+            blue: { bg: '#e6f1f7', border: '#4f88b7', text: '#17384f' },
+            amber: { bg: '#f7f2df', border: '#b79344', text: '#564312' },
+            gray: { bg: '#edf1ec', border: '#7b8a7d', text: '#2a332d' },
+          },
+        },
+        dark: {
+          surface: '#131b18',
+          surfaceAlt: '#1b2924',
+          panel: '#22342d',
+          border: '#2f4b41',
+          textPrimary: '#e9fff1',
+          textSecondary: '#b0d5c1',
+          eventColors: {
+            pink: { bg: '#3f2831', border: '#cb8a9e', text: '#ffe7ee' },
+            green: { bg: '#1f3f32', border: '#6fca9d', text: '#ddffee' },
+            blue: { bg: '#1d3742', border: '#79b2d6', text: '#d9f2ff' },
+            amber: { bg: '#40361f', border: '#d6b477', text: '#fff1d8' },
+            gray: { bg: '#2a3630', border: '#a0b4a8', text: '#ecfff2' },
+          },
+        },
+      },
+      rose: {
+        light: {
+          surface: '#fff9f8',
+          surfaceAlt: '#faece8',
+          panel: '#ffffff',
+          border: '#e7cec7',
+          textPrimary: '#2f2224',
+          textSecondary: '#7a5f64',
+          eventColors: {
+            pink: { bg: '#fde9f0', border: '#c9668f', text: '#5c223a' },
+            green: { bg: '#edf5ef', border: '#5a8f6b', text: '#224731' },
+            blue: { bg: '#eceff8', border: '#667fbe', text: '#28365f' },
+            amber: { bg: '#f9efdf', border: '#bf8a3e', text: '#633d10' },
+            gray: { bg: '#f1ecee', border: '#93808a', text: '#362c31' },
+          },
+        },
+        dark: {
+          surface: '#1b1517',
+          surfaceAlt: '#271d21',
+          panel: '#32242a',
+          border: '#4c343d',
+          textPrimary: '#ffedf0',
+          textSecondary: '#d9b7bf',
+          eventColors: {
+            pink: { bg: '#4b2737', border: '#e18db0', text: '#ffe6f0' },
+            green: { bg: '#263830', border: '#84bf9b', text: '#e1fff0' },
+            blue: { bg: '#293246', border: '#94aee8', text: '#e7eeff' },
+            amber: { bg: '#453222', border: '#d5a569', text: '#ffefd9' },
+            gray: { bg: '#3a2f36', border: '#b6a2aa', text: '#fff0f5' },
+          },
+        },
+      },
+      ocean: {
+        light: {
+          surface: '#f7fbfc',
+          surfaceAlt: '#e8f1f4',
+          panel: '#ffffff',
+          border: '#c9d9df',
+          textPrimary: '#1f2931',
+          textSecondary: '#556873',
+          eventColors: {
+            pink: { bg: '#f8eaf0', border: '#c47d98', text: '#4d2a3a' },
+            green: { bg: '#e8f3ef', border: '#4d9178', text: '#1e4a3a' },
+            blue: { bg: '#e4f2f8', border: '#4e8eb5', text: '#1a4358' },
+            amber: { bg: '#f7f1e1', border: '#ba9544', text: '#56420f' },
+            gray: { bg: '#e8eef2', border: '#748b99', text: '#25323b' },
+          },
+        },
+        dark: {
+          surface: '#12181c',
+          surfaceAlt: '#1a252b',
+          panel: '#23323a',
+          border: '#32505b',
+          textPrimary: '#e9f8ff',
+          textSecondary: '#aec8d5',
+          eventColors: {
+            pink: { bg: '#412a35', border: '#cf8aa4', text: '#ffe8f1' },
+            green: { bg: '#1f3a34', border: '#71b79f', text: '#dcfff2' },
+            blue: { bg: '#1f3c4a', border: '#7bc4e7', text: '#def4ff' },
+            amber: { bg: '#3d3523', border: '#d5b274', text: '#fff0da' },
+            gray: { bg: '#2a3942', border: '#9eb8c7', text: '#edf8ff' },
+          },
+        },
+      },
+    }
+
+    const preset = themePresets[settings.themePreset] || themePresets.royal
+    const palette = isDark ? preset.dark : preset.light
+
     document.documentElement.style.setProperty('--color-accent', settings.accentColor)
-    
+    document.documentElement.style.setProperty('--theme-surface', palette.surface)
+    document.documentElement.style.setProperty('--theme-surface-alt', palette.surfaceAlt)
+    document.documentElement.style.setProperty('--theme-panel', palette.panel)
+    document.documentElement.style.setProperty('--theme-border', palette.border)
+    document.documentElement.style.setProperty('--theme-text-primary', palette.textPrimary)
+    document.documentElement.style.setProperty('--theme-text-secondary', palette.textSecondary)
+    document.documentElement.style.setProperty('--calendar-line', isDark ? 'rgba(195, 187, 215, 0.12)' : 'rgba(104, 96, 103, 0.18)')
+    document.documentElement.style.setProperty('--calendar-line-strong', isDark ? 'rgba(195, 187, 215, 0.18)' : 'rgba(104, 96, 103, 0.28)')
+    document.documentElement.style.setProperty('--calendar-sleep-fill', isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)')
+
+    Object.entries(palette.eventColors || {}).forEach(([key, tones]) => {
+      document.documentElement.style.setProperty(`--event-${key}-bg`, tones.bg)
+      document.documentElement.style.setProperty(`--event-${key}-border`, tones.border)
+      document.documentElement.style.setProperty(`--event-${key}-text`, tones.text)
+    })
+
     // Apply font size
     const fontSizes = { small: '90%', medium: '100%', large: '110%', extraLarge: '120%' }
     document.documentElement.style.fontSize = fontSizes[settings.fontSize]
@@ -141,7 +289,14 @@ function CalendarApp() {
     
     // Set default view from settings
     setActiveView(settings.defaultView === 'day' ? 'Day' : settings.defaultView === 'month' ? 'Month' : 'Week')
-  }, [settings.accentColor, settings.fontSize, settings.compactMode, settings.defaultView])
+  }, [
+    isDark,
+    settings.accentColor,
+    settings.themePreset,
+    settings.fontSize,
+    settings.compactMode,
+    settings.defaultView,
+  ])
 
   // Apply dark mode class to html element
   useEffect(() => {

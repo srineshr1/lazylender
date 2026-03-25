@@ -2,6 +2,8 @@ import { create } from 'zustand'
 
 const DEFAULT_SETTINGS = {
   accentColor: '#3b82f6',
+  themePreset: 'royal',
+  fontSize: 'medium',
   compactMode: false,
   showWeekends: true,
   defaultView: 'week',
@@ -20,6 +22,7 @@ export const useSettingsStore = create((set, get) => ({
       ...DEFAULT_SETTINGS,
       hasUnsavedChanges: false,
       isLoaded: false,
+      savingKeys: {},
       supabase: null,
       userId: null,
 
@@ -31,8 +34,16 @@ export const useSettingsStore = create((set, get) => ({
           const settings = { ...get(), [key]: value }
           delete settings.hasUnsavedChanges
           delete settings.isLoaded
+          delete settings.savingKeys
           delete settings.supabase
           delete settings.userId
+
+          set((state) => ({
+            savingKeys: {
+              ...state.savingKeys,
+              [key]: true,
+            },
+          }))
 
           supabase
             .from('profiles')
@@ -45,6 +56,14 @@ export const useSettingsStore = create((set, get) => ({
                 console.log('[Settings] Setting synced:', key)
               }
             })
+            .finally(() => {
+              set((state) => ({
+                savingKeys: {
+                  ...state.savingKeys,
+                  [key]: false,
+                },
+              }))
+            })
         }
       },
 
@@ -56,8 +75,17 @@ export const useSettingsStore = create((set, get) => ({
           const settings = { ...get(), ...updates }
           delete settings.hasUnsavedChanges
           delete settings.isLoaded
+          delete settings.savingKeys
           delete settings.supabase
           delete settings.userId
+
+          set((state) => {
+            const nextSavingKeys = { ...state.savingKeys }
+            Object.keys(updates).forEach((key) => {
+              nextSavingKeys[key] = true
+            })
+            return { savingKeys: nextSavingKeys }
+          })
 
           supabase
             .from('profiles')
@@ -69,6 +97,15 @@ export const useSettingsStore = create((set, get) => ({
               } else {
                 console.log('[Settings] Multiple settings synced')
               }
+            })
+            .finally(() => {
+              set((state) => {
+                const nextSavingKeys = { ...state.savingKeys }
+                Object.keys(updates).forEach((key) => {
+                  nextSavingKeys[key] = false
+                })
+                return { savingKeys: nextSavingKeys }
+              })
             })
         }
       },

@@ -12,7 +12,7 @@ const HourCells = memo(function HourCells() {
       {Array.from({ length: TOTAL_HOURS }, (_, i) => (
         <div
           key={i}
-          className="border-b border-black/[0.04] dark:border-white/[0.04]"
+          className="border-b calendar-line"
           style={{ height: PX_PER_HOUR }}
         />
       ))}
@@ -30,8 +30,8 @@ const SleepZone = memo(function SleepZone({ type, hours, awakeEnd }) {
         className="absolute left-0 right-0 top-0 pointer-events-none z-[2]"
         style={{ height: hours * PX_PER_HOUR }}
       >
-        <div className="w-full h-full bg-black/[0.06] dark:bg-white/[0.03]" />
-        <div className="absolute bottom-0 left-0 right-0 border-b-2 border-dashed border-black/[0.12] dark:border-white/[0.10]" />
+        <div className="w-full h-full calendar-sleep-fill" />
+        <div className="absolute bottom-0 left-0 right-0 border-b-2 border-dashed calendar-line-strong" />
       </div>
     )
   }
@@ -44,8 +44,8 @@ const SleepZone = memo(function SleepZone({ type, hours, awakeEnd }) {
         height: hours * PX_PER_HOUR,
       }}
     >
-      <div className="absolute top-0 left-0 right-0 border-t-2 border-dashed border-black/[0.12] dark:border-white/[0.10]" />
-      <div className="w-full h-full bg-black/[0.06] dark:bg-white/[0.03]" />
+      <div className="absolute top-0 left-0 right-0 border-t-2 border-dashed calendar-line-strong" />
+      <div className="w-full h-full calendar-sleep-fill" />
     </div>
   )
 })
@@ -91,7 +91,7 @@ function DayColumn({ date, events, searchQuery, onEventClick, onSlotClick, awake
   return (
     <div
       ref={setNodeRef}
-      className={`border-l border-black/[0.06] dark:border-white/[0.06] relative ${
+      className={`border-l calendar-line relative ${
         isOver ? 'bg-blue-500/10 dark:bg-blue-400/15' : ''
       } transition-all duration-200`}
       style={{ height: TOTAL_HOURS * PX_PER_HOUR }}

@@ -4,9 +4,150 @@
 
 * { box-sizing: border-box; }
 
+:root {
+  --color-accent: #3b82f6;
+  --theme-surface: #fcfbf8;
+  --theme-surface-alt: #f3efe6;
+  --theme-panel: #ffffff;
+  --theme-border: #dfd4c4;
+  --theme-text-primary: #2a2a2f;
+  --theme-text-secondary: #686067;
+  --calendar-line: rgba(104, 96, 103, 0.18);
+  --calendar-line-strong: rgba(104, 96, 103, 0.28);
+  --calendar-sleep-fill: rgba(0, 0, 0, 0.05);
+  --event-pink-bg: #f8e9f0;
+  --event-pink-border: #cc6b95;
+  --event-pink-text: #4f2238;
+  --event-green-bg: #e8f4ec;
+  --event-green-border: #47906b;
+  --event-green-text: #1d4b35;
+  --event-blue-bg: #e8edf8;
+  --event-blue-border: #4f72c7;
+  --event-blue-text: #1f3569;
+  --event-amber-bg: #f8f0e2;
+  --event-amber-border: #b9853f;
+  --event-amber-text: #5b3a12;
+  --event-gray-bg: #ececf0;
+  --event-gray-border: #7e8093;
+  --event-gray-text: #2a2c34;
+}
+
 html, body, #root {
   height: 100%;
   overflow: hidden;
+}
+
+body {
+  background: radial-gradient(circle at top right, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 42%), var(--theme-surface);
+  color: var(--theme-text-primary);
+}
+
+.theme-panel {
+  background: var(--theme-panel);
+  border-color: var(--theme-border);
+}
+
+.theme-surface-alt {
+  background: var(--theme-surface-alt);
+  border-color: var(--theme-border);
+}
+
+.theme-text-primary { color: var(--theme-text-primary); }
+.theme-text-secondary { color: var(--theme-text-secondary); }
+.theme-hover-text:hover { color: var(--theme-text-primary); }
+
+.glass-panel {
+  background: color-mix(in srgb, var(--theme-panel) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-border) 70%, transparent);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-subtle {
+  background: color-mix(in srgb, var(--theme-surface-alt) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-border) 70%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.theme-icon-btn {
+  color: var(--theme-text-secondary);
+  transition: color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
+}
+
+.theme-icon-btn:hover {
+  color: var(--theme-text-primary);
+  background: color-mix(in srgb, var(--theme-panel) 85%, var(--color-accent) 15%);
+}
+
+.theme-icon-btn:active {
+  transform: scale(0.97);
+}
+
+.calendar-line {
+  border-color: var(--calendar-line);
+}
+
+.calendar-line-strong {
+  border-color: var(--calendar-line-strong);
+}
+
+.calendar-sleep-fill {
+  background: var(--calendar-sleep-fill);
+}
+
+.theme-control {
+  background: color-mix(in srgb, var(--theme-panel) 90%, var(--color-accent) 10%);
+  border: 1px solid color-mix(in srgb, var(--theme-border) 84%, var(--color-accent) 16%);
+  color: var(--theme-text-primary);
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.theme-control:hover {
+  border-color: color-mix(in srgb, var(--theme-border) 58%, var(--color-accent) 42%);
+}
+
+.theme-control:active {
+  transform: scale(0.98);
+}
+
+.theme-control-active {
+  background: color-mix(in srgb, var(--color-accent) 18%, var(--theme-panel) 82%);
+  border-color: color-mix(in srgb, var(--color-accent) 60%, var(--theme-border) 40%);
+  color: var(--theme-text-primary);
+}
+
+.theme-toggle {
+  background: color-mix(in srgb, var(--theme-border) 62%, transparent);
+}
+
+.theme-toggle-on {
+  background: linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 65%, white));
+}
+
+.theme-tab-pill {
+  border: 1px solid color-mix(in srgb, var(--theme-border) 70%, var(--color-accent) 30%);
+  background: color-mix(in srgb, var(--theme-panel) 86%, var(--theme-surface-alt) 14%);
+  color: var(--theme-text-secondary);
+  transition: all 0.2s ease;
+}
+
+.theme-tab-pill:hover {
+  color: var(--theme-text-primary);
+  border-color: color-mix(in srgb, var(--theme-border) 45%, var(--color-accent) 55%);
+}
+
+.theme-tab-pill-active {
+  background: color-mix(in srgb, var(--color-accent) 20%, var(--theme-panel) 80%);
+  color: var(--theme-text-primary);
+  border-color: color-mix(in srgb, var(--color-accent) 65%, var(--theme-border) 35%);
+  box-shadow: 0 8px 24px -16px var(--color-accent);
+}
+
+.press-feedback:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* Scrollbar styling */

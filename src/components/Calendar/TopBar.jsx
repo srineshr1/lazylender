@@ -80,15 +80,14 @@ export default function TopBar({
 
   return (
     <header 
-      className="border-b dark:border-white/10 px-3 md:px-6 h-14 flex items-center gap-2 md:gap-4 flex-shrink-0" 
-      style={{ backgroundColor: isDark ? '#1f1d30' : '#faf9f7', borderBottomColor: isDark ? undefined : '#e5e2dc' }}
+      className="relative z-40 border-b border-[color:var(--theme-border)] px-3 md:px-6 h-14 flex items-center gap-2 md:gap-4 flex-shrink-0 glass-subtle"
       role="banner"
     >
       {/* Mobile menu button */}
       {isMobile && onMenuClick && (
         <button
           onClick={onMenuClick}
-          className="w-10 h-10 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors md:hidden"
+          className="w-10 h-10 rounded-lg theme-icon-btn flex items-center justify-center md:hidden"
           aria-label="Open menu"
         >
           <Icon name="menu" className="w-5 h-5" aria-hidden="true" />
@@ -97,16 +96,16 @@ export default function TopBar({
 
       {/* Search - hidden on mobile, shown on tablet+ */}
       <div className="hidden sm:flex items-center gap-2 rounded-lg px-3 py-1.5 border w-40 md:w-56" style={{ 
-        backgroundColor: isDark ? '#252340' : '#f0ede8',
-        borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e5e2dc'
+        backgroundColor: 'color-mix(in srgb, var(--theme-panel) 88%, var(--color-accent) 12%)',
+        borderColor: 'color-mix(in srgb, var(--theme-border) 75%, var(--color-accent) 25%)'
       }}>
-        <Icon name="search" className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" aria-hidden="true" />
+        <Icon name="search" className="w-3.5 h-3.5 theme-text-secondary flex-shrink-0" aria-hidden="true" />
         <input
           type="search"
           placeholder="Search events…"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-transparent border-none outline-none text-[13px] text-light-text dark:text-gray-200 placeholder-gray-400 w-full font-sans"
+          className="bg-transparent border-none outline-none text-[13px] theme-text-primary placeholder:text-[color:var(--theme-text-secondary)] w-full font-sans"
           aria-label="Search events"
         />
       </div>
@@ -115,7 +114,7 @@ export default function TopBar({
 
       {/* View tabs — Day / Week / Month */}
       <nav aria-label="Calendar view">
-        <div className="flex gap-0.5 bg-light-card dark:bg-[#252340] rounded-lg p-0.5" role="tablist">
+        <div className="flex gap-0.5 rounded-lg p-0.5 glass-subtle" role="tablist">
           {VIEWS.map((v, index) => (
             <button
               key={v}
@@ -124,8 +123,8 @@ export default function TopBar({
               className={`
                 px-2 sm:px-3.5 py-1.5 rounded-md text-[11px] sm:text-[12.5px] font-medium transition-all duration-150
                 ${activeView === v
-                  ? 'bg-light-bg dark:bg-[#1a1a2e] text-light-text dark:text-gray-100 shadow-sm'
-                  : 'text-light-text-secondary dark:text-gray-400 hover:text-light-text dark:hover:text-gray-200 hover:bg-light-card/50 dark:hover:bg-white/10'}
+                  ? 'theme-control-active shadow-sm'
+                  : 'theme-text-secondary theme-hover-text hover:bg-black/5'}
               `}
               role="tab"
               aria-selected={activeView === v}
@@ -144,7 +143,7 @@ export default function TopBar({
         <div className="relative">
           <button
             onClick={() => setWhatsappOpen(!whatsappOpen)}
-            className="relative w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+            className="relative w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center"
             aria-label={connected ? 'WhatsApp Connected' : enabled ? 'WhatsApp Disconnected' : 'WhatsApp settings'}
             aria-expanded={whatsappOpen}
             aria-haspopup="dialog"
@@ -163,7 +162,7 @@ export default function TopBar({
         </div>
         <button
           onClick={() => toggle()}
-          className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center"
           aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-pressed={isDark}
         >
@@ -171,7 +170,7 @@ export default function TopBar({
         </button>
         <button
           onClick={onAddEvent}
-          className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center"
           aria-label="Add new event"
         >
           <Icon name="plus" className="w-4 h-4" aria-hidden="true" />
@@ -183,7 +182,7 @@ export default function TopBar({
             <button 
               ref={userButtonRef}
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors" 
+              className="w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center" 
               aria-label={`User menu for ${user.email}`}
               aria-expanded={showUserMenu}
               aria-haspopup="menu"
@@ -195,19 +194,20 @@ export default function TopBar({
                 ref={userMenuRef}
                 className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg border z-50" 
                 style={{
-                  backgroundColor: isDark ? '#1f1d30' : '#ffffff',
-                  borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e5e2dc'
+                  backgroundColor: 'color-mix(in srgb, var(--theme-panel) 80%, transparent)',
+                  borderColor: 'color-mix(in srgb, var(--theme-border) 72%, transparent)',
+                  backdropFilter: 'blur(14px)'
                 }}
                 role="menu"
                 aria-label="User menu"
               >
-                <div className="p-3 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e5e2dc' }}>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Signed in as</p>
-                  <p className="text-sm font-medium text-light-text dark:text-white truncate">{user.email}</p>
+                <div className="p-3 border-b" style={{ borderColor: 'var(--theme-border)' }}>
+                  <p className="text-xs theme-text-secondary">Signed in as</p>
+                  <p className="text-sm font-medium theme-text-primary truncate">{user.email}</p>
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-light-card dark:hover:bg-white/10 text-red-600 dark:text-red-400 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-black/5 text-red-600 dark:text-red-400 flex items-center gap-2"
                   role="menuitem"
                 >
                   <Icon name="logout" className="w-4 h-4" aria-hidden="true" />
@@ -221,7 +221,7 @@ export default function TopBar({
         {/* If not authenticated, just show plain user icon */}
         {(!authEnabled || !user) && (
           <button 
-            className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors" 
+            className="w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center" 
             aria-label="Profile (not signed in)"
           >
             <Icon name="user" className="w-4 h-4" aria-hidden="true" />
@@ -232,7 +232,7 @@ export default function TopBar({
           <button
             data-notification-trigger
             onClick={togglePanel}
-            className="relative w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+            className="relative w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center"
             aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
             aria-expanded={isOpen}
             aria-haspopup="dialog"
@@ -251,7 +251,7 @@ export default function TopBar({
         </div>
         <button
           onClick={onSettings}
-          className="w-8 h-8 rounded-lg hover:bg-light-card dark:hover:bg-white/10 text-light-text-secondary hover:text-light-text dark:text-gray-400 dark:hover:text-gray-200 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center"
           aria-label="Settings"
         >
           <Icon name="cog" className="w-4 h-4" aria-hidden="true" />

@@ -39,9 +39,7 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className={`w-[420px] rounded-2xl p-6 shadow-2xl animate-modalIn ${
-        isDark ? 'bg-[#1f1d30]' : 'bg-white'
-      }`}>
+      <div className="w-[420px] rounded-2xl p-6 shadow-2xl animate-modalIn glass-panel">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -51,31 +49,29 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
               </svg>
             </div>
             <div>
-              <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+              <h3 className="text-lg font-semibold theme-text-primary">
                 WhatsApp Sync
               </h3>
-              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <p className="text-xs theme-text-secondary">
                 Auto-add calendar events from groups
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className={`p-2 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}
+            className="p-2 rounded-lg transition-colors theme-icon-btn"
           >
             <Icon name="xMark" className="w-5 h-5" />
           </button>
         </div>
 
         {/* Enable Toggle */}
-        <div className={`flex items-center justify-between p-4 rounded-xl mb-4 ${
-          isDark ? 'bg-white/[0.05]' : 'bg-gray-50'
-        }`}>
+        <div className="flex items-center justify-between p-4 rounded-xl mb-4 glass-subtle">
           <div>
-            <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <p className="font-medium theme-text-primary">
               Enable WhatsApp Sync
             </p>
-            <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className="text-xs mt-0.5 theme-text-secondary">
               Process messages from selected groups
             </p>
           </div>
@@ -94,9 +90,9 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
         {/* Groups Section */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-              Selected Groups
-            </h4>
+              <h4 className="font-medium theme-text-primary">
+                Selected Groups
+              </h4>
             <button
               onClick={() => setShowAddForm(!showAddForm)}
               className="text-xs text-[#25D366] hover:text-[#1da851] font-medium transition-colors"
@@ -107,12 +103,10 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
 
           {/* Add Group Form */}
           {showAddForm && (
-            <div className={`p-4 rounded-xl mb-3 ${
-              isDark ? 'bg-white/[0.05]' : 'bg-gray-50'
-            }`}>
+            <div className="p-4 rounded-xl mb-3 glass-subtle">
               <div className="space-y-3">
                 <div>
-                  <label className={`block text-xs mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <label className="block text-xs mb-1 theme-text-secondary">
                     Group Display Name *
                   </label>
                   <input
@@ -121,15 +115,11 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
                     onChange={(e) => setNewName(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="e.g., Family Group"
-                    className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${
-                      isDark 
-                        ? 'bg-[#252340] border-white/10 text-gray-200 focus:border-[#25D366]' 
-                        : 'bg-white border-gray-200 text-gray-800 focus:border-[#25D366]'
-                    }`}
+                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors theme-control"
                   />
                 </div>
                 <div>
-                  <label className={`block text-xs mb-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <label className="block text-xs mb-1 theme-text-secondary">
                     Group Number (optional)
                   </label>
                   <input
@@ -138,11 +128,7 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
                     onChange={(e) => setNewNumber(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="e.g., +91XXXXXXXXXX"
-                    className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${
-                      isDark 
-                        ? 'bg-[#252340] border-white/10 text-gray-200 focus:border-[#25D366]' 
-                        : 'bg-white border-gray-200 text-gray-800 focus:border-[#25D366]'
-                    }`}
+                    className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors theme-control"
                   />
                 </div>
                 <button
@@ -157,11 +143,9 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
           )}
 
           {/* Group List */}
-          <div className={`rounded-xl overflow-hidden ${
-            isDark ? 'bg-white/[0.03]' : 'bg-gray-50'
-          }`}>
+          <div className="rounded-xl overflow-hidden glass-subtle">
             {selectedGroups.length === 0 ? (
-              <div className={`p-6 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className="p-6 text-center theme-text-secondary">
                 <p className="text-sm">No groups selected</p>
                 <p className="text-xs mt-1">Add groups to sync calendar events</p>
               </div>
@@ -169,24 +153,20 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
               selectedGroups.map((group) => (
                 <div
                   key={group.id}
-                  className={`flex items-center justify-between p-3 border-b last:border-b-0 ${
-                    isDark ? 'border-white/[0.05]' : 'border-gray-200'
-                  }`}
+                  className="flex items-center justify-between p-3 border-b border-[color:var(--theme-border)] last:border-b-0"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                      isDark ? 'bg-white/10' : 'bg-gray-200'
-                    }`}>
-                      <svg className={`w-4 h-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} viewBox="0 0 24 24" fill="currentColor">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center glass-subtle">
+                      <svg className="w-4 h-4 theme-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                       </svg>
                     </div>
                     <div>
-                      <p className={`text-sm font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+                      <p className="text-sm font-medium theme-text-primary">
                         {group.name}
                       </p>
                       {group.number && (
-                        <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <p className="text-xs theme-text-secondary">
                           {group.number}
                         </p>
                       )}
@@ -194,9 +174,7 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
                   </div>
                   <button
                     onClick={() => removeGroup(group.id)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      isDark ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-500'
-                    }`}
+                    className="p-2 rounded-lg transition-colors hover:bg-red-500/15 text-red-500"
                   >
                     <Icon name="trash" className="w-4 h-4" />
                   </button>
@@ -207,9 +185,7 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
         </div>
 
         {/* Info */}
-        <div className={`p-3 rounded-xl text-xs ${
-          isDark ? 'bg-white/[0.03] text-gray-400' : 'bg-gray-50 text-gray-500'
-        }`}>
+        <div className="p-3 rounded-xl text-xs glass-subtle theme-text-secondary">
           <p>• Messages from selected groups will be processed by AI</p>
           <p>• Calendar events will be auto-extracted</p>
           <p>• Messages are not stored after processing</p>

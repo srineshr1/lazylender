@@ -272,9 +272,9 @@ export default function WhatsAppPopup({ onClose }) {
     }
   }
 
-  const panelClass = isDark ? 'bg-[#1f1d30] border-white/10 text-gray-100' : 'bg-white border-gray-200 text-gray-800'
-  const subClass = isDark ? 'text-gray-400' : 'text-gray-500'
-  const cardClass = isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
+  const panelClass = 'glass-panel text-[color:var(--theme-text-primary)]'
+  const subClass = 'theme-text-secondary'
+  const cardClass = 'glass-subtle border-[color:var(--theme-border)]'
 
   const toneClass = {
     success: 'bg-green-500',
@@ -291,7 +291,7 @@ export default function WhatsAppPopup({ onClose }) {
       className={`absolute top-14 right-4 w-[400px] rounded-2xl shadow-2xl border animate-popIn z-50 ${panelClass}`}
       style={{ maxHeight: '82vh' }}
     >
-      <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+      <div className="flex items-center justify-between p-4 border-b border-[color:var(--theme-border)]">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-[#25D366] flex items-center justify-center">
             <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -299,14 +299,14 @@ export default function WhatsAppPopup({ onClose }) {
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-semibold">WhatsApp</h3>
+            <h3 className="text-sm font-semibold theme-text-primary">WhatsApp</h3>
             <div className="flex items-center gap-2 mt-0.5">
               <div className={`w-2 h-2 rounded-full ${toneClass}`} />
               <p className={`text-xs ${subClass}`}>{meta.label}</p>
             </div>
           </div>
         </div>
-        <button onClick={onClose} className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-white/10' : 'hover:bg-gray-100'}`}>
+        <button onClick={onClose} className="p-1.5 rounded-lg theme-icon-btn">
           <svg className={`w-4 h-4 ${subClass}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -321,7 +321,7 @@ export default function WhatsAppPopup({ onClose }) {
             </div>
           )}
 
-          <div className={`rounded-xl border p-3 ${cardClass}`}>
+            <div className={`rounded-xl border p-3 ${cardClass}`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold">Connection status</p>
@@ -368,7 +368,7 @@ export default function WhatsAppPopup({ onClose }) {
             </div>
 
             {!!qrCode && !isConnected && (
-              <div className="mt-3 pt-3 border-t border-dashed border-white/20 text-center">
+               <div className="mt-3 pt-3 border-t border-dashed border-[color:var(--theme-border)] text-center">
                 <p className={`text-xs mb-2 ${subClass}`}>Scan QR code (attempt {qrAttempts}/{maxQrAttempts})</p>
                 <div className="bg-white p-3 rounded-xl inline-block mb-2">
                   <QRCodeSVG value={qrCode} size={150} level="M" includeMargin bgColor="#ffffff" fgColor="#000000" />
@@ -380,15 +380,15 @@ export default function WhatsAppPopup({ onClose }) {
 
           {isConnected && (
             <>
-              <div className={`flex gap-2 p-1 rounded-lg ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
+               <div className="flex gap-2 p-1 rounded-lg glass-subtle">
                 {['groups', 'messages', 'status'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setView(tab)}
                     className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${
                       view === tab
-                        ? isDark ? 'bg-white/10 text-gray-100' : 'bg-white text-gray-700 shadow-sm'
-                        : isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-700'
+                        ? 'theme-control-active'
+                        : 'theme-text-secondary theme-hover-text'
                     }`}
                   >
                     {tab === 'groups' ? `Groups (${watchedGroupIds.length})` : tab === 'messages' ? `Messages (${validCount})` : 'Health'}
@@ -403,7 +403,7 @@ export default function WhatsAppPopup({ onClose }) {
                     <button
                       onClick={() => fetchGroups()}
                       disabled={isRefreshingGroups}
-                      className={`text-xs px-3 py-1.5 rounded-lg ${isDark ? 'bg-white/10 hover:bg-white/15' : 'bg-white hover:bg-gray-100 border border-gray-200'} disabled:opacity-50`}
+                      className="text-xs px-3 py-1.5 rounded-lg theme-control press-feedback disabled:opacity-50"
                     >
                       {isRefreshingGroups ? 'Refreshing...' : 'Refresh'}
                     </button>
@@ -416,7 +416,7 @@ export default function WhatsAppPopup({ onClose }) {
                   ) : (
                     <div className="space-y-2 max-h-72 overflow-y-auto">
                       {groups.map((group) => (
-                        <label key={group.id} className={`flex items-center gap-3 p-2 rounded-lg ${isDark ? 'hover:bg-white/5' : 'hover:bg-white'}`}>
+                        <label key={group.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
                           <input
                             type="checkbox"
                             checked={watchedGroupIds.includes(group.id)}
@@ -442,7 +442,7 @@ export default function WhatsAppPopup({ onClose }) {
                     <button
                       onClick={() => fetchMessages()}
                       disabled={isRefreshingMessages}
-                      className={`text-xs px-3 py-1.5 rounded-lg ${isDark ? 'bg-white/10 hover:bg-white/15' : 'bg-white hover:bg-gray-100 border border-gray-200'} disabled:opacity-50`}
+                      className="text-xs px-3 py-1.5 rounded-lg theme-control press-feedback disabled:opacity-50"
                     >
                       {isRefreshingMessages ? 'Refreshing...' : 'Refresh'}
                     </button>
@@ -453,7 +453,7 @@ export default function WhatsAppPopup({ onClose }) {
                   ) : (
                     <div className="space-y-2 max-h-72 overflow-y-auto">
                       {recentMessages.map((message) => (
-                        <div key={message.id} className={`rounded-lg p-2 border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-white'}`}>
+                        <div key={message.id} className="rounded-lg p-2 border glass-subtle">
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <p className="text-xs font-semibold truncate">{message.groupName}</p>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full ${
@@ -477,19 +477,19 @@ export default function WhatsAppPopup({ onClose }) {
                 <div className={`rounded-xl border p-3 ${cardClass}`}>
                   <p className="text-xs font-semibold mb-2">Connection health</p>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className={`rounded-lg p-2 ${isDark ? 'bg-white/5' : 'bg-white border border-gray-200'}`}>
+                     <div className="rounded-lg p-2 glass-subtle">
                       <p className={subClass}>Session</p>
                       <p className="font-semibold mt-1">{sessionStatus}</p>
                     </div>
-                    <div className={`rounded-lg p-2 ${isDark ? 'bg-white/5' : 'bg-white border border-gray-200'}`}>
+                     <div className="rounded-lg p-2 glass-subtle">
                       <p className={subClass}>Watched groups</p>
                       <p className="font-semibold mt-1">{watchedGroupIds.length}</p>
                     </div>
-                    <div className={`rounded-lg p-2 ${isDark ? 'bg-white/5' : 'bg-white border border-gray-200'}`}>
+                     <div className="rounded-lg p-2 glass-subtle">
                       <p className={subClass}>Recent valid events</p>
                       <p className="font-semibold mt-1">{validCount}</p>
                     </div>
-                    <div className={`rounded-lg p-2 ${isDark ? 'bg-white/5' : 'bg-white border border-gray-200'}`}>
+                     <div className="rounded-lg p-2 glass-subtle">
                       <p className={subClass}>Latest status</p>
                       <p className="font-semibold mt-1 truncate">{statusMessage}</p>
                     </div>

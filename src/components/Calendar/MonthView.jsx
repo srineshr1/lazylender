@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { format, addMonths, subMonths, isSameMonth, isToday as fnsIsToday } from 'date-fns'
 import { useEventStore } from '../../store/useEventStore'
-import { useDarkStore } from '../../store/useDarkStore'
 import { useSettingsStore } from '../../store/useSettingsStore'
+import { useThemeColors } from '../../hooks/useThemeColors'
 import { getMonthDays, fmtDate } from '../../lib/dateUtils'
 import { Icon } from '../Icons'
 import DayPreviewPopup from './DayPreviewPopup'
@@ -11,8 +11,8 @@ const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }) {
   const { events, searchQuery } = useEventStore()
-  const { isDark } = useDarkStore()
   const { showPastEvents } = useSettingsStore()
+  const { getEventDotColor } = useThemeColors()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [slideDir, setSlideDir] = useState(null)
   const [animKey, setAnimKey] = useState(0)
@@ -120,26 +120,26 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Month navigation */}
-      <div className="px-7 py-3 flex items-center gap-3 border-b dark:border-white/10 flex-shrink-0" style={{ backgroundColor: isDark ? '#1f1d30' : '#faf9f7', borderBottomColor: isDark ? undefined : '#e5e2dc' }}>
+      <div className="px-7 py-3 flex items-center gap-3 border-b border-[color:var(--theme-border)] flex-shrink-0 glass-subtle">
         <button
           onClick={() => navigate('left')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center theme-icon-btn"
         >
           <Icon name="chevronLeft" className="w-4 h-4" />
         </button>
-        <h2 className="font-display text-[22px] text-light-text dark:text-gray-100 tracking-tight min-w-[200px]">
+        <h2 className="font-display text-[22px] theme-text-primary tracking-tight min-w-[200px]">
           {monthLabel}
         </h2>
         <button
           onClick={() => navigate('right')}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-light-text-secondary hover:bg-light-card dark:hover:bg-white/10 dark:text-gray-400 hover:text-light-text transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center theme-icon-btn"
         >
           <Icon name="chevronRight" className="w-4 h-4" />
         </button>
 
         <button
           onClick={() => setCurrentMonth(new Date())}
-          className="ml-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium text-light-text-secondary dark:text-gray-300 hover:bg-light-card dark:hover:bg-white/10 transition-colors"
+          className="ml-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium theme-text-secondary theme-hover-text hover:bg-black/5 transition-colors"
         >
           Today
         </button>
@@ -148,14 +148,14 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
       </div>
 
       {/* Calendar grid */}
-      <div className="flex-1 overflow-hidden p-6">
+      <div className="flex-1 overflow-hidden p-6" style={{ background: 'color-mix(in srgb, var(--theme-surface-alt) 72%, transparent)' }}>
         <div className="h-full flex flex-col" key={animKey}>
           {/* Weekday headers */}
           <div className="grid grid-cols-7 gap-px mb-2">
             {WEEKDAYS.map(day => (
               <div
                 key={day}
-                className="text-center text-[11px] font-semibold text-light-text-secondary dark:text-gray-400 uppercase tracking-wider py-2"
+                className="text-center text-[11px] font-semibold theme-text-secondary uppercase tracking-wider py-2"
               >
                 {day}
               </div>
@@ -163,7 +163,7 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
           </div>
 
           {/* Days grid */}
-          <div className={`flex-1 grid grid-cols-7 gap-px rounded-lg overflow-hidden ${slideClass}`} style={{ backgroundColor: isDark ? undefined : '#e5e2dc' }}>
+          <div className={`flex-1 grid grid-cols-7 gap-px rounded-lg overflow-hidden ${slideClass}`} style={{ backgroundColor: 'color-mix(in srgb, var(--theme-border) 85%, transparent)' }}>
             {days.map((date, idx) => {
               const dateStr = fmtDate(date)
               const isCurrentMonth = isSameMonth(date, currentMonth)
@@ -178,7 +178,7 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
                   onDoubleClick={() => handleDayDoubleClick(date)}
                   className={`
                     p-2 flex flex-col items-center justify-start
-                    hover:bg-light-card dark:hover:bg-[#252340] transition-colors
+                    hover:bg-black/5 transition-colors glass-subtle
                     ${!isCurrentMonth ? 'opacity-30' : ''}
                     ${isToday ? 'ring-2 ring-blue-500 ring-inset' : ''}
                   `}
@@ -189,8 +189,8 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
                     ${isToday
                       ? 'bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center'
                       : isCurrentMonth
-                        ? 'text-gray-800 dark:text-gray-100'
-                        : 'text-gray-400 dark:text-gray-600'
+                        ? 'theme-text-primary'
+                        : 'theme-text-secondary opacity-55'
                     }
                   `}>
                     {format(date, 'd')}
@@ -206,11 +206,7 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
                             key={i}
                             className="w-1.5 h-1.5 rounded-full"
                             style={{
-                              backgroundColor: ev.color === 'pink' ? '#ec4899'
-                                : ev.color === 'green' ? '#10b981'
-                                : ev.color === 'amber' ? '#f59e0b'
-                                : ev.color === 'gray' ? '#6b7280'
-                                : '#3b82f6',
+                              backgroundColor: getEventDotColor(ev.color),
                               opacity: eventOpacity,
                             }}
                             title={ev.title}
@@ -218,7 +214,7 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
                         )
                       })}
                       {dayEvents.length > 3 && (
-                        <div className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">
+                        <div className="text-[9px] theme-text-secondary font-medium">
                           +{dayEvents.length - 3}
                         </div>
                       )}
@@ -227,7 +223,7 @@ export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }
 
                   {/* Event count on hover */}
                   {hasEvents && (
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                    <div className="text-[10px] theme-text-secondary mt-1">
                       {dayEvents.length} {dayEvents.length === 1 ? 'event' : 'events'}
                     </div>
                   )}

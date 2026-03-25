@@ -1,6 +1,5 @@
 import React from 'react'
 import { Icon } from '../Icons'
-import { useDarkStore } from '../../store/useDarkStore'
 import { useNotificationStore } from '../../store/useNotificationStore'
 
 /**
@@ -30,7 +29,6 @@ const formatRelativeTime = (timestamp) => {
  * @param {Function} props.onViewEvent - Callback when view event is clicked
  */
 export default function NotificationItem({ notification, onViewEvent }) {
-  const { isDark } = useDarkStore()
   const { markRead, deleteNotification } = useNotificationStore()
 
   const handleClick = () => {
@@ -52,19 +50,13 @@ export default function NotificationItem({ notification, onViewEvent }) {
       onClick={handleClick}
       className={`group relative flex items-start gap-3 px-3 py-3 cursor-pointer transition-colors border-l-2 ${
         notification.read
-          ? isDark
-            ? 'hover:bg-white/[0.03] border-transparent'
-            : 'hover:bg-gray-50 border-transparent'
-          : isDark
-          ? 'bg-white/[0.04] hover:bg-white/[0.06] border-accent'
-          : 'bg-accent/5 hover:bg-accent/10 border-accent'
+          ? 'hover:bg-black/5 dark:hover:bg-white/10 border-transparent'
+          : 'bg-accent/10 hover:bg-accent/15 border-accent'
       }`}
     >
       {/* Icon */}
       <div
-        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-lg ${
-          isDark ? 'bg-white/[0.08]' : 'bg-gray-100'
-        }`}
+        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-lg glass-subtle"
       >
         {notification.icon}
       </div>
@@ -74,29 +66,17 @@ export default function NotificationItem({ notification, onViewEvent }) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h4
-              className={`text-[13px] font-medium ${
-                notification.read
-                  ? isDark
-                    ? 'text-gray-300'
-                    : 'text-gray-700'
-                  : isDark
-                  ? 'text-gray-100'
-                  : 'text-gray-900'
-              }`}
+              className="text-[13px] font-medium theme-text-primary"
             >
               {notification.title}
             </h4>
             <p
-              className={`text-[12px] mt-0.5 ${
-                isDark ? 'text-gray-500' : 'text-gray-600'
-              }`}
+              className="text-[12px] mt-0.5 theme-text-secondary"
             >
               {notification.message}
             </p>
             <p
-              className={`text-[11px] mt-1 ${
-                isDark ? 'text-gray-600' : 'text-gray-400'
-              }`}
+              className="text-[11px] mt-1 theme-text-secondary"
             >
               {formatRelativeTime(notification.timestamp)}
             </p>
@@ -109,11 +89,7 @@ export default function NotificationItem({ notification, onViewEvent }) {
             )}
             <button
               onClick={handleDelete}
-              className={`opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded flex items-center justify-center ${
-                isDark
-                  ? 'hover:bg-white/[0.1] text-gray-500'
-                  : 'hover:bg-gray-200 text-gray-400'
-              }`}
+              className="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded flex items-center justify-center theme-icon-btn"
               aria-label="Delete notification"
             >
               <Icon name="x" className="w-3 h-3" />
@@ -124,11 +100,7 @@ export default function NotificationItem({ notification, onViewEvent }) {
         {/* View Event Link */}
         {notification.eventId && (
           <button
-            className={`text-[11px] mt-2 font-medium transition-colors ${
-              isDark
-                ? 'text-accent hover:text-accent/80'
-                : 'text-accent hover:text-accent/80'
-            }`}
+            className="text-[11px] mt-2 font-medium transition-colors text-accent hover:text-accent/80"
           >
             View Event →
           </button>

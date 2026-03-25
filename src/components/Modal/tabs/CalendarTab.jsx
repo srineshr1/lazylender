@@ -1,14 +1,13 @@
 import React from 'react'
-import { useDarkStore } from '../../../store/useDarkStore'
 import { useSettingsStore } from '../../../store/useSettingsStore'
 
 export default function CalendarTab() {
-  const { isDark } = useDarkStore()
   const {
     defaultView,
     awakeStart,
     awakeEnd,
     showPastEvents,
+    savingKeys,
     updateSetting,
     updateMultiple,
   } = useSettingsStore()
@@ -21,33 +20,30 @@ export default function CalendarTab() {
 
   return (
     <div>
-      <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
-        isDark ? 'text-gray-500' : 'text-gray-400'
-      }`}>
+      <div className="text-[11px] font-semibold uppercase tracking-wider mb-4 theme-text-secondary">
         View Settings
       </div>
 
       <div className="space-y-5">
         <div className="flex items-center justify-between py-2">
           <div>
-            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <p className="text-[13px] font-medium theme-text-primary">
               Default View
             </p>
-            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+            <p className="text-[12px] mt-0.5 theme-text-secondary">
               Shown when app opens
             </p>
           </div>
-          <div className="flex rounded-lg overflow-hidden border ${
-            isDark ? 'border-white/10' : 'border-gray-200'
-          }">
+          <div className="flex rounded-lg overflow-hidden border border-[color:var(--theme-border)]">
             {['day', 'week', 'month'].map((view) => (
               <button
                 key={view}
                 onClick={() => updateSetting('defaultView', view)}
-                className={`px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                disabled={savingKeys.defaultView}
+                className={`px-3 py-1.5 text-[12px] font-medium transition-colors press-feedback ${
                   defaultView === view
-                    ? isDark ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-900'
-                    : isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                    ? 'theme-control-active'
+                    : 'theme-text-secondary theme-hover-text'
                 }`}
               >
                 {view.charAt(0).toUpperCase() + view.slice(1)}
@@ -58,19 +54,20 @@ export default function CalendarTab() {
 
         <div className="flex items-center justify-between py-2">
           <div>
-            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <p className="text-[13px] font-medium theme-text-primary">
               Show Past Events
             </p>
-            <p className={`text-[12px] mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+            <p className="text-[12px] mt-0.5 theme-text-secondary">
               Display completed events
             </p>
           </div>
           <button
             onClick={() => updateSetting('showPastEvents', !showPastEvents)}
-            className={`relative w-10 h-5 rounded-full transition-colors ${
+            disabled={savingKeys.showPastEvents}
+            className={`relative w-10 h-5 rounded-full transition-colors press-feedback ${
               showPastEvents 
-                ? 'bg-accent' 
-                : isDark ? 'bg-white/20' : 'bg-gray-300'
+                ? 'theme-toggle-on' 
+                : 'theme-toggle'
             }`}
           >
             <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
@@ -79,27 +76,25 @@ export default function CalendarTab() {
           </button>
         </div>
 
-        <div className={`h-px my-4 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+        <div className="h-px my-4 border-t border-[color:var(--theme-border)]" />
 
-        <div className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
-          isDark ? 'text-gray-500' : 'text-gray-400'
-        }`}>
+        <div className="text-[11px] font-semibold uppercase tracking-wider mb-4 theme-text-secondary">
           Display Hours
         </div>
 
         <div className="py-2">
           <div className="flex items-center justify-between mb-3">
-            <p className={`text-[13px] font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <p className="text-[13px] font-medium theme-text-primary">
               Awake Hours
             </p>
-            <p className={`text-[12px] ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className="text-[12px] theme-text-secondary">
               {formatHour(awakeStart)} - {formatHour(awakeEnd)}
             </p>
           </div>
           
           <div className="space-y-3">
             <div>
-              <label className={`text-[11px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <label className="text-[11px] theme-text-secondary">
                 Start: {formatHour(awakeStart)}
               </label>
               <input
@@ -117,7 +112,7 @@ export default function CalendarTab() {
               />
             </div>
             <div>
-              <label className={`text-[11px] ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              <label className="text-[11px] theme-text-secondary">
                 End: {formatHour(awakeEnd)}
               </label>
               <input
