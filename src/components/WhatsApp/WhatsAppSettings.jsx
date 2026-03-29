@@ -36,10 +36,10 @@ export default function WhatsAppSettings({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+      className="fixed inset-0 glass-backdrop z-50 flex items-center justify-center"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-[420px] rounded-2xl p-6 shadow-2xl animate-modalIn glass-panel">
+      <div className="w-[420px] rounded-2xl p-6 shadow-2xl animate-modalIn glass-panel glass-modal">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">

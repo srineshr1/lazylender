@@ -18,7 +18,7 @@ export default function DayPreviewPopup({
     <>
       {/* Backdrop to catch clicks outside */}
       <div 
-        className="fixed inset-0 z-40"
+        className="fixed inset-0 z-40 bg-black/10 backdrop-blur-[2px]"
         onClick={onClose}
         onContextMenu={(e) => { e.preventDefault(); onClose() }}
       />
@@ -74,7 +74,7 @@ export default function DayPreviewPopup({
                     onEventClick(ev)
                     onClose()
                   }}
-                  className={`w-full px-4 py-2.5 flex items-start gap-3 hover:bg-black/5 transition-colors text-left ${
+                  className={`w-full px-4 py-2.5 flex items-start gap-3 hover:bg-white/20 dark:hover:bg-white/10 transition-colors text-left ${
                     ev.done ? 'opacity-60' : ''
                   }`}
                 >

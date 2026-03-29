@@ -2,6 +2,8 @@ import React, { useRef, useEffect, useState, useId } from 'react'
 import { useChatStore } from '../../store/useChatStore'
 import { useLLM } from './useLLM'
 
+const RESIZE_EDGE_THRESHOLD = 6
+
 function TypingDots() {
   return (
     <div className="flex gap-1 py-1" role="status" aria-label="AI is typing">
@@ -64,9 +66,81 @@ export default function ChatSidebar({ onClose }) {
   const { send } = useLLM()
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [height, setHeight] = useState(600)
+  const [width, setWidth] = useState(320)
+  const [nearEdge, setNearEdge] = useState(null)
+  const [isResizing, setIsResizing] = useState(false)
+  const [resizeEdge, setResizeEdge] = useState(null)
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
   const chatRegionId = useId()
+  const sidebarRef = useRef(null)
+  const startX = useRef(0)
+  const startY = useRef(0)
+  const startWidth = useRef(0)
+  const startHeight = useRef(0)
+
+  const handleMouseMove = (e) => {
+    if (isResizing) return
+    const sidebar = sidebarRef.current
+    if (!sidebar) return
+    const rect = sidebar.getBoundingClientRect()
+    const distanceFromLeft = e.clientX - rect.left
+    const distanceFromTop = e.clientY - rect.top
+
+    const isNearLeft = distanceFromLeft <= RESIZE_EDGE_THRESHOLD
+    const isNearTop = distanceFromTop <= RESIZE_EDGE_THRESHOLD
+
+    if (isNearLeft && isNearTop) {
+      setNearEdge('corner')
+    } else if (isNearLeft) {
+      setNearEdge('left')
+    } else if (isNearTop) {
+      setNearEdge('top')
+    } else {
+      setNearEdge(null)
+    }
+  }
+
+  const handleMouseDown = (e, edge) => {
+    e.preventDefault()
+    setIsResizing(true)
+    setResizeEdge(edge)
+    startX.current = e.clientX
+    startY.current = e.clientY
+    startWidth.current = width
+    startHeight.current = height
+  }
+
+  useEffect(() => {
+    if (!isResizing) return
+
+    const onMouseMove = (e) => {
+      if (resizeEdge === 'left' || resizeEdge === 'corner') {
+        const delta = startX.current - e.clientX
+        const newWidth = Math.min(Math.max(280, startWidth.current + delta), 600)
+        setWidth(newWidth)
+      }
+      if (resizeEdge === 'top' || resizeEdge === 'corner') {
+        const delta = startY.current - e.clientY
+        const newHeight = Math.min(Math.max(300, startHeight.current + delta), window.innerHeight * 0.85)
+        setHeight(newHeight)
+      }
+    }
+
+    const onMouseUp = () => {
+      setIsResizing(false)
+      setResizeEdge(null)
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [isResizing, resizeEdge])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -100,11 +174,32 @@ export default function ChatSidebar({ onClose }) {
 
   const onlineStatus = isOnline === true ? 'Online' : isOnline === false ? 'Offline' : 'Connecting'
 
+  const cursorStyle = isResizing
+    ? (resizeEdge === 'corner' ? 'nwse-resize' : resizeEdge === 'left' ? 'ew-resize' : resizeEdge === 'top' ? 'ns-resize' : 'default')
+    : nearEdge === 'corner'
+    ? 'nwse-resize'
+    : nearEdge === 'left'
+    ? 'ew-resize'
+    : nearEdge === 'top'
+    ? 'ns-resize'
+    : undefined
+
   return (
     <aside 
-      className="w-80 min-w-[320px] h-[600px] max-h-[85vh] flex-shrink-0 border flex flex-col rounded-2xl shadow-2xl overflow-hidden glass-panel"
+      ref={sidebarRef}
+      className={`flex-shrink-0 border flex flex-col rounded-2xl shadow-2xl overflow-hidden glass-panel ${isResizing ? 'select-none' : ''}`}
       role="complementary"
       aria-label="AI chat assistant"
+      style={{ 
+        height: `${height}px`,
+        width: `${width}px`,
+        minWidth: '280px',
+        maxWidth: '600px',
+        maxHeight: '85vh',
+        cursor: cursorStyle,
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setNearEdge(null)}
     >
       {/* Header */}
       <header className="px-4 pt-4 pb-3 border-b border-[color:var(--theme-border)] flex-shrink-0 flex items-center justify-between">
@@ -174,6 +269,24 @@ export default function ChatSidebar({ onClose }) {
         </div>
         <p id="chat-input-hint" className="text-[10.5px] text-center mt-1.5 theme-text-secondary">Enter to send · Shift+Enter for new line</p>
       </div>
+
+      {/* Left edge resize zone */}
+      <div
+        className="absolute top-0 bottom-0 left-0 w-6 -ml-3"
+        onMouseDown={(e) => handleMouseDown(e, 'left')}
+      />
+
+      {/* Top edge resize zone */}
+      <div
+        className="absolute top-0 left-0 right-0 h-6 -mt-3"
+        onMouseDown={(e) => handleMouseDown(e, 'top')}
+      />
+
+      {/* Top-left corner resize zone */}
+      <div
+        className="absolute top-0 left-0 w-6 h-6 -ml-3 -mt-3 cursor-nwse-resize"
+        onMouseDown={(e) => handleMouseDown(e, 'corner')}
+      />
     </aside>
   )
 }

@@ -10,10 +10,10 @@ export default function ProtectedRoute({ children }) {
   // Show loading state while checking auth
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8 bg-light-bg dark:bg-sidebar-deep">
-        <div className="w-full max-w-6xl">
+      <div className="min-h-screen w-full flex items-center justify-center p-6 md:p-8 bg-light-bg dark:bg-sidebar-deep">
+        <div className="w-full max-w-none">
           <div className="mb-6 h-8 w-48 bg-light-card dark:bg-gray-800 rounded animate-pulse" />
-          <LoadingSkeleton rows={8} />
+          <LoadingSkeleton rows={14} />
         </div>
       </div>
     )

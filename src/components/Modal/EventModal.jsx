@@ -6,11 +6,11 @@ import { createFocusTrap, KEYS, announce } from '../../lib/accessibility'
 import LoadingSpinner from '../LoadingSpinner'
 
 const COLORS = [
-  { key: 'pink',  bg: '#f8e9f0', border: '#e8b3d0', label: 'Pink' },
-  { key: 'green', bg: '#e8f4ec', border: '#b3dfc4', label: 'Green' },
-  { key: 'blue',  bg: '#e8edf8', border: '#b3c7ed', label: 'Blue' },
-  { key: 'amber', bg: '#f8f0e2', border: '#ead9b8', label: 'Amber' },
-  { key: 'gray',  bg: '#ececf0', border: '#d1d1d9', label: 'Gray' },
+  { key: 'pink',  bg: '#dba8ef', border: '#c992e0', label: 'Pink' },
+  { key: 'green', bg: '#86d9a8', border: '#6bc48e', label: 'Green' },
+  { key: 'blue',  bg: '#90bbec', border: '#70a6db', label: 'Blue' },
+  { key: 'amber', bg: '#ecc96a', border: '#ddb84d', label: 'Amber' },
+  { key: 'gray',  bg: '#a0a0a0', border: '#888888', label: 'Gray' },
 ]
 
 const RECURRENCE = ['none', 'daily', 'weekly', 'monthly']
@@ -220,7 +220,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+      className="fixed inset-0 glass-backdrop z-50 flex items-center justify-center"
       onClick={(e) => { if (e.target === e.currentTarget && !isSaving) onClose() }}
       role="dialog"
       aria-modal="true"
@@ -228,7 +228,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
     >
       <div 
         ref={modalRef}
-        className="rounded-2xl p-6 w-[420px] max-h-[90vh] overflow-y-auto shadow-2xl animate-modalIn glass-panel"
+        className="rounded-2xl p-6 w-[420px] max-h-[90vh] overflow-y-auto shadow-2xl animate-modalIn glass-panel glass-modal"
         role="document"
       >
         {showRecurringPrompt ? (
@@ -274,7 +274,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                 ref={titleInputRef}
                 id="event-title"
                 type="text"
-                className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.title ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary placeholder:text-[color:var(--theme-text-secondary)]/40`}
+                className={`w-full glass-field ${validationErrors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''} rounded-xl px-4 py-3 text-sm outline-none transition-all font-sans theme-text-primary`}
                 placeholder="Event title…"
                 value={form.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
@@ -295,7 +295,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                 <input 
                   type="date"
                   id="event-date"
-                  className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.date ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary`}
+                  className={`w-full glass-field ${validationErrors.date ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''} rounded-xl px-4 py-3 text-sm outline-none transition-all font-sans theme-text-primary`}
                   value={form.date}
                   onChange={(e) => set('date', e.target.value)}
                   aria-required="true"
@@ -311,7 +311,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                 <input 
                   type="time"
                   id="event-time"
-                  className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.time ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary`}
+                  className={`w-full glass-field ${validationErrors.time ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''} rounded-xl px-4 py-3 text-sm outline-none transition-all font-sans theme-text-primary`}
                   value={form.time}
                   onChange={(e) => set('time', e.target.value)}
                   aria-required="true"
@@ -331,7 +331,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                 <input 
                   type="number"
                   id="event-duration"
-                  className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.duration ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary`}
+                  className={`w-full glass-field ${validationErrors.duration ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''} rounded-xl px-4 py-3 text-sm outline-none transition-all font-sans theme-text-primary`}
                   value={form.duration} 
                   min={15} 
                   step={15}
@@ -347,7 +347,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
                 <input
                   id="event-location"
                   type="text"
-                  className="w-full bg-[color:var(--theme-panel)] border border-[color:var(--theme-border)] rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary placeholder:text-[color:var(--theme-text-secondary)]/40"
+                  className="w-full glass-field rounded-xl px-4 py-3 text-sm outline-none transition-all font-sans theme-text-primary"
                   placeholder="e.g. Zoom, Office…"
                   value={form.sub}
                   onChange={(e) => handleInputChange('sub', e.target.value)}
@@ -360,7 +360,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
               <label htmlFor="event-recurrence" className="block text-sm font-semibold theme-text-primary mb-2">Repeats</label>
               <select
                 id="event-recurrence"
-                className={`w-full bg-[color:var(--theme-panel)] border ${validationErrors.recurrence ? 'border-red-500' : 'border-[color:var(--theme-border)]'} rounded-xl px-4 py-3 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all font-sans theme-text-primary`}
+                className={`w-full glass-field ${validationErrors.recurrence ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''} rounded-xl px-4 py-3 text-sm outline-none transition-all font-sans theme-text-primary`}
                 value={form.recurrence}
                 onChange={(e) => set('recurrence', e.target.value)}
               >

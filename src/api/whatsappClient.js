@@ -4,7 +4,9 @@
  * Handles all HTTP communication, authentication, error handling, and response parsing.
  */
 
-const BRIDGE_URL = import.meta.env.VITE_BRIDGE_URL || 'http://localhost:3001'
+const BRIDGE_URL = import.meta.env.VITE_BRIDGE_URL 
+  ? import.meta.env.VITE_BRIDGE_URL 
+  : (import.meta.env.DEV ? '' : 'http://localhost:3001')  // Relative URLs in dev (proxy), explicit in prod
 const DEFAULT_TIMEOUT = 5000 // 5 seconds
 const MAX_RETRIES = 3
 const BASE_RETRY_DELAY = 500 // 500ms (faster retries for local bridge)
@@ -15,6 +17,7 @@ const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504]
 // User credentials storage
 let currentUserId = null
 let currentApiKey = null
+const credentialStore = window.sessionStorage
 
 /**
  * Calculate exponential backoff delay with jitter
@@ -73,13 +76,13 @@ export class WhatsAppBridgeError extends Error {
 export function setBridgeCredentials(userId, apiKey) {
   currentUserId = userId
   currentApiKey = apiKey
-  // Also store in localStorage for persistence
+  // Store in sessionStorage to reduce long-lived credential exposure
   if (userId && apiKey) {
-    localStorage.setItem('bridge_user_id', userId)
-    localStorage.setItem('bridge_api_key', apiKey)
+    credentialStore.setItem('bridge_user_id', userId)
+    credentialStore.setItem('bridge_api_key', apiKey)
   } else {
-    localStorage.removeItem('bridge_user_id')
-    localStorage.removeItem('bridge_api_key')
+    credentialStore.removeItem('bridge_user_id')
+    credentialStore.removeItem('bridge_api_key')
   }
 }
 
@@ -87,8 +90,8 @@ export function setBridgeCredentials(userId, apiKey) {
  * Load credentials from localStorage
  */
 export function loadBridgeCredentials() {
-  currentUserId = localStorage.getItem('bridge_user_id')
-  currentApiKey = localStorage.getItem('bridge_api_key')
+  currentUserId = credentialStore.getItem('bridge_user_id')
+  currentApiKey = credentialStore.getItem('bridge_api_key')
   return { userId: currentUserId, apiKey: currentApiKey }
 }
 
@@ -120,7 +123,7 @@ function getBridgeHeaders() {
  * @returns {string|null} User ID
  */
 export function getCurrentUserId() {
-  return currentUserId || localStorage.getItem('bridge_user_id')
+  return currentUserId || credentialStore.getItem('bridge_user_id')
 }
 
 /**

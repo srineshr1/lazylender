@@ -51,6 +51,7 @@ qr-code-displayed.png
 
 # Secrets
 client_secret_*.json
+whatsapp-bridge/config/api-keys.json
 
 # Windows Reserved Names
 nul

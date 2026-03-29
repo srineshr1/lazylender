@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor,
   useSensor, useSensors,
@@ -30,6 +30,8 @@ export default function DayView({ onEventClick, onSlotClick, initialDate }) {
   const [slideDir, setSlideDir] = useState(null)
   const [animKey, setAnimKey] = useState(0)
   const [showSleepSettings, setShowSleepSettings] = useState(false)
+  const timelineRef = useRef(null)
+  const smoothCenterRef = useRef(false)
 
   const expandedEvents = expandRecurring(events, [currentDay])
   
@@ -85,6 +87,33 @@ export default function DayView({ onEventClick, onSlotClick, initialDate }) {
     ? 'animate-slideFromRight'
     : ''
 
+  const centerNowLine = (behavior = 'auto') => {
+    const el = timelineRef.current
+    if (!el) return
+    const now = new Date()
+    const nowMins = now.getHours() * 60 + now.getMinutes()
+    const nowY = (nowMins / 60) * PX_PER_HOUR
+    const target = Math.max(0, nowY - el.clientHeight / 2)
+    const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight)
+    const top = Math.min(target, maxScroll)
+
+    if (typeof el.scrollTo === 'function') {
+      el.scrollTo({ top, behavior })
+      return
+    }
+
+    el.scrollTop = top
+  }
+
+  useEffect(() => {
+    if (!isToday(currentDay) || !timelineRef.current) return
+
+    const behavior = smoothCenterRef.current ? 'smooth' : 'auto'
+    smoothCenterRef.current = false
+    const frame = requestAnimationFrame(() => centerNowLine(behavior))
+    return () => cancelAnimationFrame(frame)
+  }, [currentDay, animKey])
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Date navigation */}
@@ -106,7 +135,11 @@ export default function DayView({ onEventClick, onSlotClick, initialDate }) {
         </button>
 
         <button
-          onClick={() => setCurrentDay(new Date())}
+          onClick={() => {
+            smoothCenterRef.current = true
+            setCurrentDay(new Date())
+            setAnimKey((k) => k + 1)
+          }}
           className="ml-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium theme-text-secondary theme-hover-text hover:bg-black/5 transition-colors"
         >
           Today
@@ -162,8 +195,12 @@ export default function DayView({ onEventClick, onSlotClick, initialDate }) {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="relative flex h-full">
+        <div
+          ref={timelineRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden min-w-0"
+          style={{ background: 'color-mix(in srgb, var(--theme-surface-alt) 72%, transparent)' }}
+        >
+          <div className="relative flex min-h-max" style={{ minHeight: TOTAL_HOURS * PX_PER_HOUR }}>
             {/* Hour labels */}
             <div className="sticky left-0 z-20 w-16 flex-shrink-0 border-r border-[color:var(--theme-border)] glass-subtle">
               {HOURS.map((h) => {
@@ -185,8 +222,8 @@ export default function DayView({ onEventClick, onSlotClick, initialDate }) {
             </div>
 
             {/* Single day column - centered and wider */}
-            <div className="flex-1 flex justify-center" key={animKey}>
-              <div className={`w-full max-w-4xl ${slideClass}`}>
+            <div className="flex-1 min-w-0 px-2 md:px-4 py-2" key={animKey}>
+              <div className={`w-full ${slideClass}`}>
                 <DayColumn
                   date={currentDay}
                   events={expandedEvents}

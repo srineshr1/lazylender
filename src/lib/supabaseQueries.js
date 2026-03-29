@@ -183,18 +183,22 @@ export async function clearChatMessages() {
 /**
  * Subscribe to real-time changes for events
  */
-export function subscribeToEvents(callback) {
+export async function subscribeToEvents(callback) {
   const supabase = getSupabaseClient()
   if (!supabase) return null
 
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
   const subscription = supabase
-    .channel('events_channel')
+    .channel(`events_channel_${user.id}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'events',
+        filter: `user_id=eq.${user.id}`,
       },
       callback
     )
@@ -206,18 +210,22 @@ export function subscribeToEvents(callback) {
 /**
  * Subscribe to real-time changes for chat messages
  */
-export function subscribeToChatMessages(callback) {
+export async function subscribeToChatMessages(callback) {
   const supabase = getSupabaseClient()
   if (!supabase) return null
 
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
   const subscription = supabase
-    .channel('chat_messages_channel')
+    .channel(`chat_messages_channel_${user.id}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'chat_messages',
+        filter: `user_id=eq.${user.id}`,
       },
       callback
     )

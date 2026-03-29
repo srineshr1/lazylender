@@ -28,7 +28,6 @@ import { useDarkStore } from './store/useDarkStore'
 import { useSettingsStore } from './store/useSettingsStore'
 import { useChatStore } from './store/useChatStore'
 import { useAuth } from './contexts/AuthContext'
-import { LoadingSkeleton } from './components/LoadingSpinner'
 import getSupabaseClient from './lib/supabase'
 
 function CalendarApp() {
@@ -37,7 +36,6 @@ function CalendarApp() {
   const [modal, setModal] = useState({ open: false, event: null, date: null, time: null })
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [whatsappSettingsOpen, setWhatsappSettingsOpen] = useState(false)
-  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const { events } = useEventStore()
   const { isDark, setIsDark } = useDarkStore()
   const { lastSyncedEvents } = useWhatsAppSync()
@@ -322,14 +320,6 @@ function CalendarApp() {
     }
   }, [])
 
-  // Initial loading state (shorter delay)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsInitialLoading(false)
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [])
-
   const openAdd = (date = null, time = null) =>
     setModal({ open: true, event: null, date, time })
 
@@ -380,15 +370,7 @@ function CalendarApp() {
         Skip to main content
       </a>
       
-      {isInitialLoading ? (
-        <div className="flex-1 flex items-center justify-center p-8" role="status" aria-label="Loading calendar">
-          <div className="w-full max-w-6xl">
-            <div className="mb-6 h-8 w-48 bg-light-card dark:bg-gray-800 rounded animate-pulse" />
-            <LoadingSkeleton rows={8} />
-          </div>
-        </div>
-      ) : (
-        <>
+      <>
           {/* Desktop sidebar - hidden on mobile */}
           <div className="flex-shrink-0 hidden md:block">
             <Sidebar onAddEvent={() => openAdd()} />
@@ -492,7 +474,6 @@ function CalendarApp() {
           <ToastContainer />
           <PWAInstallPrompt />
         </>
-      )}
     </div>
   )
 }

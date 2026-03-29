@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import {
   DndContext, DragOverlay, PointerSensor,
   useSensor, useSensors, closestCenter,
@@ -34,6 +34,8 @@ export default function WeekView({ onEventClick, onSlotClick }) {
   const [slideDir, setSlideDir] = useState(null)
   const [animKey, setAnimKey] = useState(0)
   const [showSleepSettings, setShowSleepSettings] = useState(false)
+  const timelineRef = useRef(null)
+  const smoothCenterRef = useRef(false)
 
   const expandedEvents = useMemo(() => expandRecurring(events, days), [events, days])
   
@@ -94,6 +96,34 @@ export default function WeekView({ onEventClick, onSlotClick }) {
     ? 'animate-slideFromRight'
     : ''
 
+  const centerNowLine = useCallback((behavior = 'auto') => {
+    const el = timelineRef.current
+    if (!el) return
+    const now = new Date()
+    const nowMins = now.getHours() * 60 + now.getMinutes()
+    const nowY = (nowMins / 60) * PX_PER_HOUR
+    const target = Math.max(0, nowY - el.clientHeight / 2)
+    const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight)
+    const top = Math.min(target, maxScroll)
+
+    if (typeof el.scrollTo === 'function') {
+      el.scrollTo({ top, behavior })
+      return
+    }
+
+    el.scrollTop = top
+  }, [])
+
+  useEffect(() => {
+    const hasToday = days.some((d) => isToday(d))
+    if (!hasToday || !timelineRef.current) return
+
+    const behavior = smoothCenterRef.current ? 'smooth' : 'auto'
+    smoothCenterRef.current = false
+    const frame = requestAnimationFrame(() => centerNowLine(behavior))
+    return () => cancelAnimationFrame(frame)
+  }, [days, animKey, centerNowLine])
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Date range nav */}
@@ -112,6 +142,16 @@ export default function WeekView({ onEventClick, onSlotClick }) {
           className="w-7 h-7 rounded-lg flex items-center justify-center theme-icon-btn"
         >
           <Icon name="chevronRight" className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={() => {
+            smoothCenterRef.current = true
+            centerNowLine('smooth')
+          }}
+          className="ml-2 px-3 py-1.5 rounded-lg text-[12.5px] font-medium theme-text-secondary theme-hover-text hover:bg-black/5 transition-colors"
+        >
+          Now
         </button>
 
         <div className="flex-1" />
@@ -163,7 +203,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
       )}
 
       {/* Timeline */}
-      <div className="flex-1 overflow-y-auto light-scroll overflow-x-hidden min-w-0">
+      <div ref={timelineRef} className="flex-1 overflow-y-auto light-scroll overflow-x-hidden min-w-0">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}

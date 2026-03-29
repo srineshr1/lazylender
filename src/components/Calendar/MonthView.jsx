@@ -7,7 +7,7 @@ import { getMonthDays, fmtDate } from '../../lib/dateUtils'
 import { Icon } from '../Icons'
 import DayPreviewPopup from './DayPreviewPopup'
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export default function MonthView({ onEventClick, onSlotClick, onNavigateToDay }) {
   const { events, searchQuery } = useEventStore()

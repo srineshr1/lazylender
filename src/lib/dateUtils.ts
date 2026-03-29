@@ -101,14 +101,14 @@ export const getWorkWeekDays = (weekStart: Date): Date[] =>
   Array.from({ length: 5 }, (_, i) => addDays(weekStart, i))
 
 /**
- * Get full 7-day week (Monday - Sunday) from a given week start
+ * Get full 7-day week (Sunday - Saturday) from a given week start
  * @param weekStart - Monday of the week (from getWorkWeekStart)
- * @returns Array of 7 Date objects (Mon-Sun)
+ * @returns Array of 7 Date objects (Sun-Sat)
  * @example
- * getFullWeekDays(monday) // [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+ * getFullWeekDays(monday) // [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
  */
 export const getFullWeekDays = (weekStart: Date): Date[] =>
-  Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+  Array.from({ length: 7 }, (_, i) => addDays(weekStart, i - 1))
 
 /**
  * Get all days in a month with padding for calendar grid
@@ -280,9 +280,15 @@ export const weekRange = (weekStart: Date): string => {
  */
 export const expandRecurring = (events: BaseEvent[], weekDates: Date[]): ExpandedEvent[] => {
   const expanded: ExpandedEvent[] = []
+  const weekDateStrs = weekDates.map(d => fmtDate(d))
   
   for (const ev of events) {
-    // Non-recurring events: add as-is
+    // Skip if event date is not in this week
+    if (!weekDateStrs.includes(ev.date)) {
+      continue
+    }
+    
+    // Non-recurring events: add if date is in this week
     if (!ev.recurrence || ev.recurrence === 'none') {
       expanded.push(ev)
       continue

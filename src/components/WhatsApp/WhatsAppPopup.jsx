@@ -288,7 +288,7 @@ export default function WhatsAppPopup({ onClose }) {
   return (
     <div
       ref={popupRef}
-      className={`absolute top-14 right-4 w-[400px] rounded-2xl shadow-2xl border animate-popIn z-50 ${panelClass}`}
+      className={`fixed inset-x-3 top-16 w-auto max-w-[420px] rounded-2xl shadow-2xl border animate-popIn z-50 md:absolute md:inset-x-auto md:top-14 md:right-4 md:w-[400px] ${panelClass}`}
       style={{ maxHeight: '82vh' }}
     >
       <div className="flex items-center justify-between p-4 border-b border-[color:var(--theme-border)]">
@@ -416,7 +416,7 @@ export default function WhatsAppPopup({ onClose }) {
                   ) : (
                     <div className="space-y-2 max-h-72 overflow-y-auto">
                       {groups.map((group) => (
-                        <label key={group.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+                        <label key={group.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/20 dark:hover:bg-white/10 transition-colors">
                           <input
                             type="checkbox"
                             checked={watchedGroupIds.includes(group.id)}

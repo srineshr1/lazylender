@@ -1,36 +1,19 @@
 import React, { useRef } from 'react'
 import { useEventStore, getTaskStatus } from '../../store/useEventStore'
-import { useDarkStore } from '../../store/useDarkStore'
 import { isSameMonth } from 'date-fns'
 import { parseDate } from '../../lib/dateUtils'
 import { Icon } from '../Icons'
 
-const STATUS_STYLES_LIGHT = {
-  done: { label: 'Done', pill: 'bg-green-100 text-green-700 border-green-300' },
-  upcoming: { label: 'Upcoming', pill: 'bg-blue-100 text-blue-700 border-blue-300' },
-  overdue: { label: 'Overdue', pill: 'bg-red-100 text-red-700 border-red-300' },
-  cancelled: { label: 'Cancelled', pill: 'bg-gray-100 text-gray-600 border-gray-300' },
-}
-
-const STATUS_STYLES_DARK = {
-  done: { label: 'Done', pill: 'bg-green-900/40 text-green-400 border-green-700/40' },
-  upcoming: { label: 'Upcoming', pill: 'bg-blue-900/40 text-blue-400 border-blue-700/40' },
-  overdue: { label: 'Overdue', pill: 'bg-red-900/40 text-red-400 border-red-700/40' },
-  cancelled: { label: 'Cancelled', pill: 'bg-gray-800/60 text-gray-500 border-gray-700/40' },
-}
-
 export default function TaskList({ onAdd }) {
-  const { events, markDone, cancelEvent } = useEventStore()
-  const { isDark } = useDarkStore()
+  const { events, markDone } = useEventStore()
   const now = new Date()
   const doubleClickTimers = useRef({})
 
   const monthEvents = events
-    .filter((e) => isSameMonth(parseDate(e.date), now) && !e.cancelled)
+    .filter(e => isSameMonth(parseDate(e.date), now) && !e.cancelled)
     .slice(0, 8)
 
   const handleClick = (id) => {
-    // Double-click detection via timer
     if (doubleClickTimers.current[id]) {
       clearTimeout(doubleClickTimers.current[id])
       delete doubleClickTimers.current[id]
@@ -38,62 +21,55 @@ export default function TaskList({ onAdd }) {
     } else {
       doubleClickTimers.current[id] = setTimeout(() => {
         delete doubleClickTimers.current[id]
-        // single click — do nothing, require double click
       }, 300)
     }
   }
 
-  const STATUS_STYLES = isDark ? STATUS_STYLES_DARK : STATUS_STYLES_LIGHT
-
   return (
-    <div className="px-3 pb-3">
-      {monthEvents.map((ev) => {
+    <div className="pb-1">
+      {monthEvents.map((ev, i) => {
         const status = getTaskStatus(ev)
-        const style = STATUS_STYLES[status]
         return (
           <div
             key={ev.id}
-            className={`flex items-start gap-2 px-1 py-1.5 rounded-lg transition-colors cursor-pointer group select-none ${
-              isDark ? 'hover:bg-white/5' : 'hover:bg-[#e0dcd6]'
-            }`}
+            className="task-item flex items-start gap-2 px-1 py-1.5 rounded-lg cursor-pointer select-none group"
+            style={{ animationDelay: `${i * 25}ms` }}
             onClick={() => handleClick(ev.id)}
             title="Double-click to mark done"
           >
             {/* Checkbox */}
             <div className={`
-              w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-200
-              ${ev.done
-                ? 'bg-green-600 border-green-600'
-                : isDark ? 'border-white/20 bg-transparent group-hover:border-white/40' : 'border-gray-400 bg-transparent group-hover:border-gray-600'}
+              task-checkbox w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-200
+              ${ev.done ? 'task-checkbox--done' : 'task-checkbox--idle'}
             `}>
               {ev.done && <Icon name="check" className="w-2.5 h-2.5 text-white" />}
             </div>
 
             {/* Title */}
-            <span className={`text-[12px] leading-snug flex-1 transition-all duration-200 ${ev.done ? 'line-through text-gray-500 dark:text-gray-600' : isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            <span className={`task-title text-[12px] leading-snug flex-1 transition-all duration-200 ${ev.done ? 'line-through task-title--done' : ''}`}>
               {ev.title}
-              {ev.sub && <span className={isDark ? 'text-gray-400 text-[11px]' : 'text-gray-500 text-[11px]'}> ({ev.sub})</span>}
+              {ev.sub && <span className="task-sub text-[11px]"> ({ev.sub})</span>}
             </span>
 
             {/* Status pill */}
-            <span className={`text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full border leading-none flex-shrink-0 mt-0.5 uppercase tracking-wide ${style.pill}`}>
-              {style.label}
+            <span className={`task-pill task-pill--${status} text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full border leading-none flex-shrink-0 mt-0.5 uppercase tracking-wide`}>
+              {status}
             </span>
           </div>
         )
       })}
 
-      <div className={`h-px my-2 ${isDark ? 'bg-white/[0.06]' : 'bg-gray-200'}`} />
+      <div className="sidebar-divider h-px my-2 mx-1" />
 
       <button
         onClick={onAdd}
-        className={`flex items-center gap-1.5 px-1 py-1.5 text-[12px] hover:text-accent transition-colors w-full rounded-lg ${isDark ? 'text-gray-400 hover:bg-white/5' : 'text-gray-500 hover:bg-gray-200'}`}
+        className="task-add-btn flex items-center gap-1.5 px-1 py-1.5 text-[12px] transition-colors w-full rounded-lg"
       >
         <Icon name="plus" className="w-3 h-3" />
         Add new
       </button>
 
-      <p className={`text-[10px] text-center mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Double-click to mark done</p>
+      <p className="task-hint text-[10px] text-center mt-1">Double-click to mark done</p>
     </div>
   )
 }

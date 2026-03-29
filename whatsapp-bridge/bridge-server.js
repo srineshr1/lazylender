@@ -1,6 +1,8 @@
 const express = require('express')
 const cors = require('cors')
 const rateLimit = require('express-rate-limit')
+const { ipKeyGenerator } = require('express-rate-limit')
+const crypto = require('crypto')
 require('dotenv').config()
 
 const { bridgeAuthMiddleware, validateUserParam, getOrCreateApiKey } = require('./middleware/bridgeAuth')
@@ -16,6 +18,19 @@ const { processIncomingMessage } = require('./whatsappProcessor')
 
 const app = express()
 const PORT = process.env.BRIDGE_PORT || 3001
+const ADMIN_API_KEY = process.env.BRIDGE_ADMIN_API_KEY || ''
+
+function secureCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false
+  const aBuf = Buffer.from(a)
+  const bBuf = Buffer.from(b)
+  if (aBuf.length !== bBuf.length) return false
+  return crypto.timingSafeEqual(aBuf, bBuf)
+}
+
+function isValidUserId(userId) {
+  return typeof userId === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(userId)
+}
 
 sessionManager.setMessageHandler((userId, message) => {
   processIncomingMessage(userId, message).catch((err) => {
@@ -57,6 +72,15 @@ const corsOptions = {
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute window
   max: 120, // 120 requests per minute (allows polling every 0.5 seconds)
+  keyGenerator: (req) => {
+    const userKey = req.headers['x-user-id']
+    if (typeof userKey === 'string' && userKey.length > 0) {
+      return `user:${userKey}`
+    }
+    return ipKeyGenerator(req.ip)
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' }
 })
 
@@ -88,8 +112,11 @@ app.post('/register', async (req, res) => {
   try {
     const { userId } = req.body
     
-    if (!userId || typeof userId !== 'string') {
-      return res.status(400).json({ error: 'userId is required' })
+    if (!isValidUserId(userId)) {
+      return res.status(400).json({
+        error: 'Invalid user ID',
+        message: 'userId must match /^[a-zA-Z0-9_-]{1,128}$/'
+      })
     }
     
     // Initialize user directory
@@ -108,7 +135,7 @@ app.post('/register', async (req, res) => {
     })
   } catch (err) {
     console.error('[Register] Error:', err.message)
-    res.status(500).json({ error: 'Failed to register user' })
+    res.status(500).json({ error: 'Failed to register user', message: err.message })
   }
 })
 
@@ -118,6 +145,25 @@ app.post('/register', async (req, res) => {
 
 // Apply authentication to all routes below
 app.use(bridgeAuthMiddleware)
+
+function requireAdmin(req, res, next) {
+  if (!ADMIN_API_KEY) {
+    return res.status(503).json({
+      error: 'Admin endpoint disabled',
+      message: 'Set BRIDGE_ADMIN_API_KEY to enable admin endpoints'
+    })
+  }
+
+  const suppliedKey = req.headers['x-admin-key']
+  if (!suppliedKey || !secureCompare(suppliedKey, ADMIN_API_KEY)) {
+    return res.status(403).json({
+      error: 'Access denied',
+      message: 'Invalid or missing X-Admin-Key header'
+    })
+  }
+
+  next()
+}
 
 /**
  * Get user's WhatsApp connection status
@@ -234,7 +280,7 @@ app.get('/users/:userId/groups', validateUserParam, (req, res) => {
     res.json(enhancedGroups)
   } catch (err) {
     console.error('[Groups] Error:', err.message)
-    res.json([])
+    res.status(500).json({ error: 'Failed to load groups' })
   }
 })
 
@@ -250,7 +296,7 @@ app.get('/users/:userId/watched-groups', validateUserParam, (req, res) => {
     res.json(watchedGroups)
   } catch (err) {
     console.error('[Watched Groups] Error:', err.message)
-    res.json([])
+    res.status(500).json({ error: 'Failed to load watched groups' })
   }
 })
 
@@ -300,7 +346,7 @@ app.get('/users/:userId/events', validateUserParam, (req, res) => {
     res.json(events)
   } catch (err) {
     console.error('[Events] Error:', err.message)
-    res.json([])
+    res.status(500).json({ error: 'Failed to load events' })
   }
 })
 
@@ -316,7 +362,7 @@ app.get('/users/:userId/messages', validateUserParam, (req, res) => {
     res.json(messages)
   } catch (err) {
     console.error('[Messages] Error:', err.message)
-    res.json([])
+    res.status(500).json({ error: 'Failed to load messages' })
   }
 })
 
@@ -385,7 +431,7 @@ app.get('/users/:userId/group-activity', validateUserParam, (req, res) => {
     res.json(activity)
   } catch (err) {
     console.error('[Group Activity] Error:', err.message)
-    res.json({})
+    res.status(500).json({ error: 'Failed to load group activity' })
   }
 })
 
@@ -397,7 +443,7 @@ app.get('/users/:userId/group-activity', validateUserParam, (req, res) => {
  * List all active sessions
  * GET /admin/sessions
  */
-app.get('/admin/sessions', (req, res) => {
+app.get('/admin/sessions', requireAdmin, (req, res) => {
   const sessions = sessionManager.getAllSessions()
   res.json({
     count: sessions.length,
@@ -448,7 +494,8 @@ app.listen(PORT, () => {
   console.log('  📡 Multi-Tenant WhatsApp Bridge Server')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log(`  🌐 Server running on port ${PORT}`)
-  console.log(`  🔐 API Auth: ${process.env.BRIDGE_REQUIRE_AUTH !== 'false' ? 'ENABLED' : 'DISABLED'}`)
+  const authEnabled = process.env.BRIDGE_REQUIRE_AUTH !== 'false' || process.env.NODE_ENV === 'production'
+  console.log(`  🔐 API Auth: ${authEnabled ? 'ENABLED' : 'DISABLED (dev only)'}`)
   console.log('  📂 User data: sessions/')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('')

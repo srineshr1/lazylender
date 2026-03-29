@@ -1,23 +1,57 @@
 import { useChatStore } from '../../store/useChatStore'
 import { useEventStore } from '../../store/useEventStore'
-import { fmtDate } from '../../lib/dateUtils'
+import { fmtDate, getWorkWeekDays } from '../../lib/dateUtils'
 import { toast } from '../../store/useToastStore'
 import { generateText, GroqError } from '../../api/groqClient'
 
 const MODEL = 'llama-3.3-70b-versatile'
 
+function getWeekDates() {
+  const today = new Date()
+  const monday = getWorkWeekDays(today)
+  return monday.map(d => fmtDate(d))
+}
+
 function extractJSON(raw) {
-  // Try direct parse
+  // Try direct parse (handles both single object and array)
   try { return JSON.parse(raw) } catch {}
   
   // Strip markdown fences
   const cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim()
   try { return JSON.parse(cleaned) } catch {}
   
-  // Find first { } block
-  const match = raw.match(/\{[^]*\}/)
-  if (match) {
-    try { return JSON.parse(match[0]) } catch {}
+  // Try parsing as array of JSON objects (one per line)
+  const lines = cleaned.split('\n').filter(line => line.trim())
+  const jsonObjects = []
+  
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    
+    // Try to find and parse a JSON object in this line
+    const match = trimmed.match(/\{[^}]*\}/)
+    if (match) {
+      try {
+        const parsed = JSON.parse(match[0])
+        jsonObjects.push(parsed)
+      } catch {
+        // Try with the full line
+        try {
+          const parsed = JSON.parse(trimmed)
+          jsonObjects.push(parsed)
+        } catch {
+          // Skip invalid JSON lines
+        }
+      }
+    }
+  }
+  
+  if (jsonObjects.length === 1) {
+    return jsonObjects[0]
+  }
+  
+  if (jsonObjects.length > 1) {
+    return jsonObjects
   }
   
   return null
@@ -32,6 +66,7 @@ export function useLLM() {
     setTyping(true)
 
     const todayStr = fmtDate(new Date())
+    const weekDates = getWeekDates()
     
     // Compact events for context
     const compactEvents = events.map(e => ({
@@ -52,6 +87,8 @@ export function useLLM() {
     const systemPrompt = `CRITICAL: You must ALWAYS respond with ONLY a single valid JSON object. Never return raw event arrays or data structures. Never explain yourself or add commentary outside the JSON.
 
 You are an AI calendar assistant. Today is ${todayStr}.
+This week's dates: ${JSON.stringify(weekDates)}
+This week's days: Mon=${weekDates[0]}, Tue=${weekDates[1]}, Wed=${weekDates[2]}, Thu=${weekDates[3]}, Fri=${weekDates[4]}
 
 ${todaySummary}
 
@@ -95,6 +132,7 @@ CRITICAL RULES:
 - NEVER delete events based on vague commands like "clear tasks", "remove all", "clear everything"
 - ONLY delete when user specifies a SPECIFIC event by name (e.g., "delete lunch", "remove the design review")
 - If user says "tasks" but you only manage calendar events, clarify: "I manage calendar events. Did you mean to delete a specific event?"
+- When user says "this week", "every day this week", "all week", or "gym this week", you MUST add events for EACH weekday (Mon, Tue, Wed, Thu, Fri) - generate MULTIPLE {"action":"add"} objects, one per day. Example: {"action":"add","event":{"title":"Gym","date":"${weekDates[0]}","time":"06:00",...}} followed by one for ${weekDates[1]}, ${weekDates[2]}, ${weekDates[3]}, ${weekDates[4]}
 - Infer dates from context (e.g. "Friday" = next Friday from today ${todayStr})
 - Color options: pink, green, blue, amber, gray
 - Always return valid JSON only, nothing else`
@@ -123,66 +161,97 @@ CRITICAL RULES:
 
       const parsed = extractJSON(raw)
 
-      // Handle different action types with validation
-      if (parsed?.action === 'add' && parsed.event) {
-        // Validate required fields
-        if (!parsed.event.title) {
-          addMessage({ role: 'ai', text: '⚠ Cannot add event without a title.' })
-          return
-        }
-        if (!parsed.event.date) {
-          addMessage({ role: 'ai', text: '⚠ Cannot add event without a date.' })
-          return
-        }
-        if (!parsed.event.time) {
-          addMessage({ role: 'ai', text: '⚠ Cannot add event without a time.' })
-          return
-        }
+      // Helper function to process a single action
+      const processAction = (actionObj) => {
+        if (actionObj?.action === 'add' && actionObj.event) {
+          // Validate required fields
+          if (!actionObj.event.title) {
+            addMessage({ role: 'ai', text: '⚠ Cannot add event without a title.' })
+            return false
+          }
+          if (!actionObj.event.date) {
+            addMessage({ role: 'ai', text: '⚠ Cannot add event without a date.' })
+            return false
+          }
+          if (!actionObj.event.time) {
+            addMessage({ role: 'ai', text: '⚠ Cannot add event without a time.' })
+            return false
+          }
 
-        // Don't generate ID - let database do it
-        const newEv = { 
-          done: false, 
-          recurrenceEnd: '', 
-          ...parsed.event 
+          const newEv = { 
+            done: false, 
+            recurrenceEnd: '', 
+            ...actionObj.event 
+          }
+          if (!newEv.duration) newEv.duration = 60
+          if (!newEv.color) newEv.color = 'blue'
+          if (!newEv.recurrence) newEv.recurrence = 'none'
+          
+          try {
+            addEvent(newEv)
+            return { success: true, message: `✓ Added "${newEv.title}" on ${newEv.date} at ${newEv.time}.` }
+          } catch (addErr) {
+            return { success: false, message: `⚠ Failed to add "${newEv.title}": ${addErr.message}` }
+          }
+        } else if (actionObj?.action === 'edit' && actionObj.id) {
+          const target = events.find((e) => e.id === actionObj.id)
+          if (!target) {
+            return { success: false, message: '⚠ Event not found. It may have been deleted.' }
+          }
+          
+          try {
+            editEvent(actionObj.id, actionObj.changes)
+            return { success: true, message: `✓ Updated "${target.title}".` }
+          } catch (editErr) {
+            return { success: false, message: `⚠ Failed to update event: ${editErr.message}` }
+          }
+        } else if (actionObj?.action === 'delete' && actionObj.id) {
+          const target = events.find((e) => e.id === actionObj.id)
+          if (!target) {
+            return { success: false, message: '⚠ Event not found. It may have already been deleted.' }
+          }
+          
+          try {
+            deleteEvent(actionObj.id)
+            return { success: true, message: `✓ Deleted "${target.title}".` }
+          } catch (delErr) {
+            return { success: false, message: `⚠ Failed to delete event: ${delErr.message}` }
+          }
+        } else if (actionObj?.action === 'none' && actionObj.reply) {
+          return { success: true, message: actionObj.reply, isReply: true }
         }
-        if (!newEv.duration) newEv.duration = 60
-        if (!newEv.color) newEv.color = 'blue'
-        if (!newEv.recurrence) newEv.recurrence = 'none'
+        return null
+      }
+
+      // Handle different action types with validation
+      if (Array.isArray(parsed)) {
+        // Process multiple actions
+        const results = []
+        for (const actionObj of parsed) {
+          const result = processAction(actionObj)
+          if (result) results.push(result)
+        }
         
-        try {
-          addEvent(newEv)
-          addMessage({ role: 'ai', text: `✓ Added "${newEv.title}" on ${newEv.date} at ${newEv.time}.` })
-        } catch (addErr) {
-          addMessage({ role: 'ai', text: `⚠ Failed to add event: ${addErr.message}` })
+        if (results.length > 0) {
+          const successCount = results.filter(r => r.success).length
+          const failCount = results.filter(r => !r.success).length
+          const messages = results.map(r => r.message)
+          
+          let summary = messages.join('\n')
+          if (failCount > 0) {
+            summary += `\n\n⚠ ${failCount} operation(s) failed.`
+          }
+          addMessage({ role: 'ai', text: summary })
+        } else {
+          addMessage({ role: 'ai', text: '⚠ Could not understand AI response. Please try again.' })
         }
-      } else if (parsed?.action === 'edit' && parsed.id) {
-        const target = events.find((e) => e.id === parsed.id)
-        if (!target) {
-          addMessage({ role: 'ai', text: '⚠ Event not found. It may have been deleted.' })
-          return
+      } else if (parsed) {
+        const result = processAction(parsed)
+        if (result) {
+          addMessage({ role: 'ai', text: result.message })
+        } else {
+          addMessage({ role: 'ai', text: raw || '(empty response)' })
         }
-        
-        try {
-          editEvent(parsed.id, parsed.changes)
-          addMessage({ role: 'ai', text: `✓ Updated "${target.title}".` })
-        } catch (editErr) {
-          addMessage({ role: 'ai', text: `⚠ Failed to update event: ${editErr.message}` })
-        }
-      } else if (parsed?.action === 'delete' && parsed.id) {
-        const target = events.find((e) => e.id === parsed.id)
-        if (!target) {
-          addMessage({ role: 'ai', text: '⚠ Event not found. It may have already been deleted.' })
-          return
-        }
-        
-        try {
-          deleteEvent(parsed.id)
-          addMessage({ role: 'ai', text: `✓ Deleted "${target.title}".` })
-        } catch (delErr) {
-          addMessage({ role: 'ai', text: `⚠ Failed to delete event: ${delErr.message}` })
-        }
-      } else if (parsed?.action === 'none' && parsed.reply) {
-        addMessage({ role: 'ai', text: parsed.reply })
       } else {
         // fallback: show raw if JSON parsing failed but we got a response
         addMessage({ role: 'ai', text: raw || '(empty response)' })

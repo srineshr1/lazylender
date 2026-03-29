@@ -23,15 +23,15 @@ export default function SettingsModal({ isOpen, onClose }) {
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/50 z-40"
+        className="fixed inset-0 glass-backdrop z-40"
         onClick={onClose}
       />
 
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="w-[760px] h-[620px] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-modalIn border theme-panel"
+          className="w-[760px] h-[620px] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-modalIn glass-panel glass-modal"
         >
-          <div className="px-6 py-5 border-b border-[color:var(--theme-border)] flex items-center justify-between">
+          <div className="px-6 py-5 border-b border-[color:var(--theme-border)]/80 flex items-center justify-between">
             <h2 className="text-[18px] font-semibold tracking-tight theme-text-primary">
               Settings
             </h2>

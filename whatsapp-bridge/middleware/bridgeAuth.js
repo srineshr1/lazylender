@@ -9,6 +9,14 @@ const path = require('path')
 
 const API_KEYS_FILE = path.join(__dirname, '..', 'config', 'api-keys.json')
 
+function isDevAuthBypassEnabled() {
+  return process.env.BRIDGE_REQUIRE_AUTH === 'false' && process.env.NODE_ENV === 'development'
+}
+
+function isValidUserId(userId) {
+  return typeof userId === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(userId)
+}
+
 // Ensure config directory exists
 const configDir = path.dirname(API_KEYS_FILE)
 if (!fs.existsSync(configDir)) {
@@ -17,7 +25,13 @@ if (!fs.existsSync(configDir)) {
 
 // Initialize API keys file if it doesn't exist
 if (!fs.existsSync(API_KEYS_FILE)) {
-  fs.writeFileSync(API_KEYS_FILE, JSON.stringify({}, null, 2))
+  fs.writeFileSync(API_KEYS_FILE, JSON.stringify({}, null, 2), { mode: 0o600 })
+}
+
+function atomicWriteJson(filePath, value) {
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`
+  fs.writeFileSync(tempPath, value, { mode: 0o600 })
+  fs.renameSync(tempPath, filePath)
 }
 
 /**
@@ -40,7 +54,7 @@ function loadApiKeys() {
  */
 function saveApiKeys(keys) {
   try {
-    fs.writeFileSync(API_KEYS_FILE, JSON.stringify(keys, null, 2))
+    atomicWriteJson(API_KEYS_FILE, JSON.stringify(keys, null, 2))
   } catch (err) {
     console.error('Failed to save API keys:', err.message)
   }
@@ -62,6 +76,10 @@ function generateApiKey(userId) {
  * @returns {string} API key
  */
 function getOrCreateApiKey(userId) {
+  if (!isValidUserId(userId)) {
+    throw new Error('Invalid userId format')
+  }
+
   const keys = loadApiKeys()
   
   if (keys[userId]) {
@@ -84,6 +102,10 @@ function getOrCreateApiKey(userId) {
  * @returns {boolean} True if valid
  */
 function validateApiKey(userId, apiKey) {
+  if (!isValidUserId(userId) || typeof apiKey !== 'string' || apiKey.length < 16) {
+    return false
+  }
+
   const keys = loadApiKeys()
   return keys[userId] === apiKey
 }
@@ -117,9 +139,13 @@ function bridgeAuthMiddleware(req, res, next) {
   const apiKey = req.headers['x-api-key']
   
   // Check if auth is disabled (for development)
-  if (process.env.BRIDGE_REQUIRE_AUTH === 'false') {
+  if (isDevAuthBypassEnabled()) {
     req.userId = userId || 'dev-user'
     return next()
+  }
+
+  if (process.env.BRIDGE_REQUIRE_AUTH === 'false') {
+    console.warn('[Auth] BRIDGE_REQUIRE_AUTH=false ignored in production')
   }
   
   // Validate credentials
@@ -150,7 +176,14 @@ function bridgeAuthMiddleware(req, res, next) {
 function validateUserParam(req, res, next) {
   const { userId } = req.params
   
-  if (process.env.BRIDGE_REQUIRE_AUTH === 'false') {
+  if (!isValidUserId(userId)) {
+    return res.status(400).json({
+      error: 'Invalid user ID',
+      message: 'userId contains invalid characters'
+    })
+  }
+
+  if (isDevAuthBypassEnabled()) {
     return next()
   }
   

@@ -71,6 +71,38 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
+.glass-backdrop {
+  background:
+    radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--color-accent) 20%, transparent), transparent 42%),
+    rgba(10, 14, 24, 0.36);
+  backdrop-filter: blur(8px) saturate(130%);
+  -webkit-backdrop-filter: blur(8px) saturate(130%);
+}
+
+.glass-modal {
+  background: color-mix(in srgb, var(--theme-panel) 74%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-border) 72%, rgba(255, 255, 255, 0.4));
+  box-shadow:
+    0 26px 48px -30px rgba(0, 0, 0, 0.55),
+    0 12px 26px -20px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glass-field {
+  background: color-mix(in srgb, var(--theme-panel) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-border) 82%, transparent);
+  color: var(--theme-text-primary);
+}
+
+.glass-field::placeholder {
+  color: color-mix(in srgb, var(--theme-text-secondary) 65%, transparent);
+}
+
+.glass-field:focus {
+  border-color: color-mix(in srgb, var(--color-accent) 58%, var(--theme-border) 42%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
 .theme-icon-btn {
   color: var(--theme-text-secondary);
   transition: color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
@@ -150,11 +182,310 @@ body {
   cursor: not-allowed;
 }
 
-/* Scrollbar styling */
+/* ============================================================
+   SIDEBAR — fully themed via CSS variables
+   ============================================================ */
+
+/* Root sidebar container */
+.sidebar-root {
+  background: var(--theme-panel);
+  border-right: 1px solid var(--theme-border);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+/* Logo */
+.sidebar-logo {
+  color: var(--theme-text-primary);
+  transition: color 0.25s ease;
+}
+
+/* Section card (Today / This month / Quick notes) */
+.sidebar-section {
+  background: color-mix(in srgb, var(--theme-surface-alt) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-border) 80%, transparent);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+/* Section header button */
+.sidebar-section-header {
+  color: var(--theme-text-primary);
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border) 60%, transparent);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-section-header:hover {
+  background: color-mix(in srgb, var(--theme-surface-alt) 90%, var(--color-accent) 10%);
+}
+
+.sidebar-section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theme-text-primary);
+}
+
+.sidebar-section-meta {
+  color: var(--theme-text-secondary);
+  font-weight: 400;
+}
+
+/* Chevron icon in section header */
+.sidebar-chevron {
+  color: var(--theme-text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+/* Empty state text */
+.sidebar-empty-text {
+  color: var(--theme-text-secondary);
+}
+
+/* Today event item row */
+.sidebar-today-item {
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-today-item:hover {
+  background: color-mix(in srgb, var(--theme-surface-alt) 90%, var(--color-accent) 10%);
+  border-radius: 8px;
+}
+
+/* Checkbox (unchecked) */
+.sidebar-checkbox {
+  border-color: color-mix(in srgb, var(--theme-border) 80%, var(--theme-text-secondary) 20%);
+  background: transparent;
+}
+.sidebar-checkbox:hover {
+  border-color: var(--color-accent);
+}
+
+/* Event item text */
+.sidebar-item-title {
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.sidebar-item-sub {
+  color: var(--theme-text-secondary);
+}
+
+/* Quick notes textarea */
+.sidebar-notes {
+  background: color-mix(in srgb, var(--theme-surface) 85%, transparent);
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text-primary);
+  transition: border-color 0.2s ease;
+}
+.sidebar-notes::placeholder {
+  color: var(--theme-text-secondary);
+  opacity: 0.7;
+}
+.sidebar-notes:focus {
+  border-color: color-mix(in srgb, var(--color-accent) 60%, var(--theme-border) 40%);
+}
+
+/* Add section dashed button */
+.sidebar-add-section {
+  border: 1.5px dashed color-mix(in srgb, var(--theme-border) 90%, transparent);
+  color: var(--theme-text-secondary);
+  background: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.sidebar-add-section:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--theme-border) 45%);
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+}
+
+/* Divider */
+.sidebar-divider {
+  background: var(--theme-border);
+  opacity: 0.6;
+}
+
+/* ============================================================
+   MINI CALENDAR — themed via CSS variables
+   ============================================================ */
+
+.mini-cal-month {
+  color: var(--theme-text-primary);
+}
+
+.mini-cal-nav-btn {
+  color: var(--theme-text-secondary);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.mini-cal-nav-btn:hover {
+  color: var(--theme-text-primary);
+  background: color-mix(in srgb, var(--theme-surface-alt) 90%, var(--color-accent) 10%);
+}
+
+.mini-cal-day-header {
+  color: var(--theme-text-secondary);
+}
+
+.mini-cal-day {
+  transition: background 0.12s ease, color 0.12s ease, transform 0.1s ease;
+}
+.mini-cal-day:active {
+  transform: scale(0.9);
+}
+
+.mini-cal-day--normal {
+  color: var(--theme-text-primary);
+}
+.mini-cal-day--normal:hover {
+  background: color-mix(in srgb, var(--theme-surface-alt) 90%, var(--color-accent) 10%);
+}
+
+.mini-cal-day--today {
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
+}
+.mini-cal-day--today:hover {
+  background: color-mix(in srgb, var(--color-accent) 85%, #000 15%);
+}
+
+.mini-cal-day--out {
+  opacity: 0.28;
+}
+
+/* ============================================================
+   TASK LIST — themed via CSS variables
+   ============================================================ */
+
+.task-item {
+  transition: background 0.15s ease;
+}
+.task-item:hover {
+  background: color-mix(in srgb, var(--theme-surface-alt) 85%, var(--color-accent) 15%);
+}
+
+.task-checkbox {
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.task-checkbox--idle {
+  border: 1.5px solid color-mix(in srgb, var(--theme-border) 80%, var(--theme-text-secondary) 20%);
+  background: transparent;
+}
+.task-checkbox--idle:hover,
+.task-item:hover .task-checkbox--idle {
+  border-color: color-mix(in srgb, var(--color-accent) 60%, var(--theme-border) 40%);
+}
+.task-checkbox--done {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+
+.task-title {
+  color: var(--theme-text-primary);
+}
+.task-title--done {
+  color: var(--theme-text-secondary);
+}
+.task-sub {
+  color: var(--theme-text-secondary);
+}
+
+/* Status pills — use CSS variables where possible, fallback to semantic colors */
+.task-pill {
+  letter-spacing: 0.04em;
+}
+.task-pill--done {
+  background: color-mix(in srgb, #22c55e 14%, transparent);
+  color: #16a34a;
+  border-color: color-mix(in srgb, #22c55e 40%, transparent);
+}
+.task-pill--upcoming {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+.task-pill--overdue {
+  background: color-mix(in srgb, #ef4444 14%, transparent);
+  color: #dc2626;
+  border-color: color-mix(in srgb, #ef4444 40%, transparent);
+}
+.task-pill--cancelled {
+  background: color-mix(in srgb, var(--theme-border) 40%, transparent);
+  color: var(--theme-text-secondary);
+  border-color: color-mix(in srgb, var(--theme-border) 60%, transparent);
+}
+
+.task-add-btn {
+  color: var(--theme-text-secondary);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.task-add-btn:hover {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.task-hint {
+  color: var(--theme-text-secondary);
+  opacity: 0.55;
+}
+
+/* ============================================================
+   GLOBAL UI ANIMATIONS — subtle & clean
+   ============================================================ */
+
+/* Sidebar items fade in on mount */
+@keyframes sidebarFadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sidebar-fade-in {
+  opacity: 0;
+  animation: sidebarFadeIn 0.24s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Subtle press scale for interactive elements */
+button, [role="button"] {
+  transition: transform 0.1s ease;
+}
+button:active, [role="button"]:active {
+  transform: scale(0.97);
+}
+
+/* Smooth page-level fade in when app loads */
+@keyframes appFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+#root {
+  animation: appFadeIn 0.3s ease forwards;
+}
+
+/* Hover lift for event blocks in calendar */
+@keyframes eventHoverLift {
+  to { box-shadow: 0 4px 16px -4px rgba(0,0,0,0.18); }
+}
+
+/* Smooth transitions on theme switches */
+.sidebar-root,
+.sidebar-section,
+.mini-cal-day,
+.task-item,
+.task-pill {
+  transition-property: background, border-color, color, opacity;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+/* ============================================================
+   SCROLLBAR STYLING
+   ============================================================ */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 .light-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
+
+/* ============================================================
+   EXISTING ANIMATIONS (preserved)
+   ============================================================ */
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
@@ -199,7 +530,6 @@ body {
 }
 .animate-slide-down { animation: slideDown 0.2s ease-out forwards; }
 
-/* Custom scrollbar for notification panel */
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { 
@@ -217,7 +547,6 @@ body {
   overflow: hidden;
 }
 
-/* Accessibility: Screen reader only content */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -230,7 +559,6 @@ body {
   border-width: 0;
 }
 
-/* Focus visible styles for keyboard navigation */
 .focus-visible:focus-visible,
 button:focus-visible,
 a:focus-visible,
@@ -242,7 +570,6 @@ select:focus-visible,
   outline-offset: 2px;
 }
 
-/* Skip link - visible only on focus */
 .skip-link {
   position: absolute;
   top: -40px;
@@ -253,12 +580,8 @@ select:focus-visible,
   z-index: 100;
   transition: top 0.2s;
 }
+.skip-link:focus { top: 0; }
 
-.skip-link:focus {
-  top: 0;
-}
-
-/* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -269,70 +592,31 @@ select:focus-visible,
   }
 }
 
-/* Fade in animation for overlays */
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 .animate-fadeIn { animation: fadeIn 0.2s ease forwards; }
 
-/* Mobile safe area for bottom navigation (iOS notch) */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
-}
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
+.safe-area-top { padding-top: env(safe-area-inset-top, 0); }
 
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0);
-}
-
-/* Touch-friendly tap targets (minimum 44x44 for accessibility) */
 @media (max-width: 767px) {
-  .touch-target {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Larger touch targets for event blocks on mobile */
-  .event-block-mobile {
-    min-height: 48px;
-    padding: 8px 10px;
-  }
-  
-  /* Prevent text selection on mobile drag */
-  .no-select {
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
-  }
+  .touch-target { min-height: 44px; min-width: 44px; }
+  .event-block-mobile { min-height: 48px; padding: 8px 10px; }
+  .no-select { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 }
 
-/* Hide scrollbars on mobile but keep functionality */
 @media (max-width: 767px) {
-  .mobile-scroll-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .mobile-scroll-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  .mobile-scroll-hide::-webkit-scrollbar { display: none; }
+  .mobile-scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
-/* Compact calendar view for small screens */
 @media (max-width: 640px) {
-  .calendar-compact .hour-label {
-    font-size: 10px;
-    width: 32px;
-  }
-  
-  .calendar-compact .event-text {
-    font-size: 11px;
-  }
+  .calendar-compact .hour-label { font-size: 10px; width: 32px; }
+  .calendar-compact .event-text { font-size: 11px; }
 }
 
-/* Tablet-specific adjustments */
 @media (min-width: 768px) and (max-width: 1023px) {
-  .tablet-sidebar {
-    width: 220px;
-    min-width: 220px;
-  }
+  .tablet-sidebar { width: 220px; min-width: 220px; }
 }
