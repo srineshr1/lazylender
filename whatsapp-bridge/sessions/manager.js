@@ -182,6 +182,45 @@ function getActiveSessions() {
   return active
 }
 
+/**
+ * Restore existing sessions from storage
+ * @returns {Promise<void>}
+ */
+async function restoreExistingSessions() {
+  const userIds = getAllUserIds()
+  console.log(`[SessionManager] Restoring ${userIds.length} existing sessions`)
+  
+  for (const userId of userIds) {
+    try {
+      const client = getClient(userId)
+      // Don't auto-initialize - let user trigger it
+      console.log(`[SessionManager] Prepared session for ${userId}`)
+    } catch (err) {
+      console.error(`[SessionManager] Failed to restore session for ${userId}:`, err.message)
+    }
+  }
+}
+
+/**
+ * Cleanup inactive sessions
+ * @returns {Promise<number>} Number of sessions cleaned up
+ */
+async function cleanupInactiveSessions() {
+  const userIds = getAllUserIds()
+  let cleaned = 0
+  
+  for (const userId of userIds) {
+    const client = sessions.get(userId)
+    if (client && !client.info) {
+      // Session exists but not connected - could clean up
+      // For now, just log
+      console.log(`[SessionManager] Inactive session for ${userId}`)
+    }
+  }
+  
+  return cleaned
+}
+
 module.exports = {
   initialize,
   setMessageHandler,
@@ -190,5 +229,7 @@ module.exports = {
   logoutSession,
   getSessionState,
   hasSession,
-  getActiveSessions
+  getActiveSessions,
+  restoreExistingSessions,
+  cleanupInactiveSessions
 }
