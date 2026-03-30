@@ -57,43 +57,63 @@ firebase hosting:domain:add kairo.srinesh.in
 
 ---
 
-## WhatsApp Bridge Deployment (Railway example)
+## WhatsApp Bridge Deployment (Fly.io)
 
-### 1. Prepare bridge for deployment
-The bridge needs persistent storage for WhatsApp sessions.
-
-### 2. Deploy to Railway
+### 1. Install Fly CLI
 ```bash
-# Install Railway CLI
-npm install -g @railway/cli
-railway login
+npm install -g flyctl
+flyctl auth login
+```
 
-# Initialize in whatsapp-bridge directory
+### 2. Create volume for WhatsApp sessions
+WhatsApp sessions must persist across restarts.
+```bash
+flyctl volumes create whatsapp_sessions --region iad
+```
+
+### 3. Deploy the bridge
+```bash
 cd whatsapp-bridge
-railway init
-
-# Set environment variables in Railway dashboard:
-# - GROQ_API_KEY=your_key
-# - BRIDGE_PORT=3001
-# - ALLOWED_ORIGINS=https://kairo.srinesh.in
-# - CALENDAR_URL=https://kairo.srinesh.in
-
-# Deploy
-railway up
+flyctl deploy
 ```
 
-### 3. Get bridge URL
-After deployment, Railway will give you a URL like: `https://kairo-bridge.up.railway.app`
+### 4. Set secrets in Fly dashboard or CLI
+```bash
+# Required secrets
+flyctl secrets set GROQ_API_KEY=your_groq_api_key
 
-### 4. Update frontend .env
-```
-VITE_BRIDGE_URL=https://kairo-bridge.up.railway.app
+# Optional configuration
+flyctl secrets set BRIDGE_PORT=3001
+flyctl secrets set CALENDAR_URL=https://your-frontend-url.com
+flyctl secrets set ALLOWED_ORIGINS=https://your-frontend-url.com
+flyctl secrets set BRIDGE_ADMIN_API_KEY=your-secure-admin-key
 ```
 
-### 5. Rebuild and redeploy frontend
+### 5. Get bridge URL
+```bash
+flyctl info
+```
+Look for `Hostname` - something like `kairo-bridge.fly.dev`
+
+### 6. Update frontend .env
+```
+VITE_BRIDGE_URL=https://kairo-bridge.fly.dev
+```
+
+### 7. Rebuild and redeploy frontend
 ```bash
 npm run build
 firebase deploy
+```
+
+### Useful Fly Commands
+```bash
+flyctl logs                           # View logs
+flyctl ssh console                    # SSH into container
+flyctl machine list                   # List machines
+flyctl machine stop <id>              # Stop machine
+flyctl machine restart <id>           # Restart machine
+flyctl secrets list                   # List secrets
 ```
 
 ---
