@@ -1,0 +1,38 @@
+Total messages: 36 (Errors: 3, Warnings: 0)
+
+[LOG] [Supabase] Client initialized @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:58
+[LOG] [Auth] Registering user with WhatsApp bridge: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1 @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:58
+[LOG] [WhatsApp] Registering with bridge: https://kairo-production-d76b.up.railway.app/register userId: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1 @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:16
+[LOG] [WhatsApp] Registration successful: {success: true, userId: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1, apiKey: wa_bridge_2c2a4ae5699f4d4eff1fc56ac6e8bd99b841b0a79cda70fd, message: User registered successfully} @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:16
+[LOG] [Auth] Bridge registration successful @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:58
+[LOG] [App] Initializing stores for user: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1 @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [PWA] Service Worker registered: https://kairocalender.web.app/ @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [Auth] Registering user with WhatsApp bridge: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1 @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:58
+[LOG] [WhatsApp] Registering with bridge: https://kairo-production-d76b.up.railway.app/register userId: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1 @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:16
+[LOG] [App] Cleaning up real-time subscriptions... @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [App] Initializing stores for user: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1 @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [App] Cleaning up real-time subscriptions... @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [App] Initializing stores for user: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1 @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [WhatsApp] Registration successful: {success: true, userId: 8ca27daf-ccf3-4d4f-8e86-a7a740f83ae1, apiKey: wa_bridge_2c2a4ae5699f4d4eff1fc56ac6e8bd99b841b0a79cda70fd, message: User registered successfully} @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:16
+[LOG] [Auth] Bridge registration successful @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:58
+[LOG] [Events] Loaded 0 events from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:9
+[LOG] [Events] Loaded 0 events from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:9
+[LOG] [Events] Loaded 0 events from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:9
+[LOG] [Settings] Loaded from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:69
+[LOG] [Settings] Loaded from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:69
+[LOG] [Chat] Loaded 0 messages from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:80
+[LOG] [App] Setting up real-time subscriptions... @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [Settings] Loaded from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:69
+[LOG] [Chat] Loaded 0 messages from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:80
+[LOG] [App] Setting up real-time subscriptions... @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [Chat] Loaded 0 messages from Supabase @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:80
+[LOG] [App] Setting up real-time subscriptions... @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:145
+[LOG] [Events] Subscription status: CLOSED @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:9
+[LOG] [Events] Subscription status: CHANNEL_ERROR @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:9
+[ERROR] ❌ Events subscription failed @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:9
+[LOG] [Chat] Subscription status: CLOSED @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:80
+[LOG] [Chat] Subscription status: CHANNEL_ERROR @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:80
+[ERROR] ❌ Chat subscription failed @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:80
+[LOG] [Settings] Subscription status: CLOSED @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:69
+[LOG] [Settings] Subscription status: CHANNEL_ERROR @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:69
+[ERROR] ❌ Settings subscription failed @ https://kairocalender.web.app/assets/index-0VC2PYKI.js:69

@@ -1,5 +1,6 @@
 const express = require('express')
 const cors = require('cors')
+const helmet = require('helmet')
 const rateLimit = require('express-rate-limit')
 const { ipKeyGenerator } = require('express-rate-limit')
 const crypto = require('crypto')
@@ -18,6 +19,10 @@ const {
 const { processIncomingMessage } = require('./whatsappProcessor')
 
 const app = express()
+
+// Trust Railway's reverse proxy so rate limiting uses real client IPs
+app.set('trust proxy', 1)
+
 const PORT = process.env.PORT || process.env.BRIDGE_PORT || 3001
 const ADMIN_API_KEY = process.env.BRIDGE_ADMIN_API_KEY || ''
 
@@ -47,6 +52,8 @@ const allowedOrigins = [
   'http://localhost:5176',
   'http://localhost:5177',
   'https://kairo.srinesh.in',
+  'https://kairocalender.web.app',
+  'https://kairocalender.firebaseapp.com'
 ]
 
 if (process.env.ALLOWED_ORIGINS) {
@@ -54,23 +61,54 @@ if (process.env.ALLOWED_ORIGINS) {
   allowedOrigins.push(...customOrigins)
 }
 
+// Filter out empty strings
+const filteredOrigins = allowedOrigins.filter(o => o && o.length > 0)
+
+console.log('[CORS] Allowed origins:', filteredOrigins)
+
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true)
+    // Allow requests with no origin (like mobile apps, curl, or Postman)
+    if (!origin) {
+      console.log('[CORS] Allowing request with no origin (mobile/curl/Postman)')
+      return callback(null, true)
+    }
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Check if origin is in allowed list
+    const isAllowed = filteredOrigins.some(allowedOrigin => {
+      // Exact match
+      if (origin === allowedOrigin) return true
+      
+      // Allow ngrok subdomains (for development/testing)
+      if (origin.includes('.ngrok-free.dev') || origin.includes('.ngrok.io')) {
+        console.log('[CORS] Allowing ngrok origin:', origin)
+        return true
+      }
+      
+      // Allow Railway preview deployments
+      if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
+        console.log('[CORS] Allowing Railway origin:', origin)
+        return true
+      }
+      
+      return false
+    })
+    
+    if (isAllowed) {
+      console.log('[CORS] Allowed origin:', origin)
       callback(null, true)
     } else {
-      console.warn(`[CORS] Blocked request from origin: ${origin}`)
+      console.warn('[CORS] Blocked request from origin:', origin)
       callback(new Error('Not allowed by CORS'))
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-User-ID', 'X-API-Key']
 }
 
-// Rate limiting - global per IP (simple setup)
+// Rate limiting - global per user/IP
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute window
   max: 120, // 120 requests per minute (allows polling every 0.5 seconds)
@@ -86,24 +124,23 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' }
 })
 
-// CORS headers middleware - must be before routes
-app.use((req, res, next) => {
-  const origin = req.headers.origin
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin)
-  }
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id, X-API-Key')
-  res.header('Access-Control-Allow-Credentials', 'true')
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end()
-  }
-  next()
+// Strict rate limit for /register — prevents API-key farming
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minute window
+  max: 10, // max 10 registrations per IP per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts, please try again later.' }
 })
 
+// Security headers (helmet) — must be before cors()
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' } // Allow cross-origin fetch
+}))
+
+// CORS — single source of truth; removes the need for manual header middleware
 app.use(cors(corsOptions))
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({ limit: '1mb' }))
 app.use(limiter)
 
 // ============================================================================
@@ -126,7 +163,7 @@ app.get('/health', (req, res) => {
  * Register new user and get API key
  * Body: { userId: string }
  */
-app.post('/register', async (req, res) => {
+app.post('/register', registerLimiter, async (req, res) => {
   try {
     const { userId } = req.body
     
@@ -206,16 +243,15 @@ app.get('/users/:userId/status', validateUserParam, (req, res) => {
   
   try {
     const status = getUserStatus(userId)
-    const session = sessionManager.getSession(userId)
+    const sessionState = sessionManager.getSessionState(userId)
     
     res.json({
       ...status,
-      sessionActive: !!session,
-      sessionStatus: session?.status || 'DISCONNECTED',
-      qrAttempts: session?.qrAttempts || 0,
-      maxQrAttempts: session?.maxQrAttempts || 3
+      sessionActive: sessionState.connected,
+      sessionStatus: sessionState.connected ? 'CONNECTED' : 'DISCONNECTED'
     })
   } catch (err) {
+    console.error('[Status] Error:', err.message)
     res.status(500).json({ 
       error: 'Failed to get status',
       connected: false 
@@ -262,7 +298,8 @@ app.post('/users/:userId/disconnect', validateUserParam, async (req, res) => {
   const { userId } = req.params
   
   try {
-    await sessionManager.destroySession(userId, false, false) // Don't logout
+    // For disconnect, we just clear the session state but keep auth
+    // The session will reconnect on next connect call
     res.json({ 
       success: true,
       message: 'Disconnected successfully'
@@ -281,7 +318,7 @@ app.post('/users/:userId/logout', validateUserParam, async (req, res) => {
   const { userId } = req.params
   
   try {
-    await sessionManager.destroySession(userId, false, true) // Logout and delete auth
+    await sessionManager.logoutSession(userId)
     res.json({ 
       success: true,
       message: 'Logged out successfully'

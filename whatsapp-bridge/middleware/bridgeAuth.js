@@ -107,7 +107,15 @@ function validateApiKey(userId, apiKey) {
   }
 
   const keys = loadApiKeys()
-  return keys[userId] === apiKey
+  const stored = keys[userId]
+  if (!stored) return false
+
+  // Timing-safe comparison — prevents side-channel timing attacks
+  try {
+    return crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(apiKey))
+  } catch {
+    return false // buffers of different length throw — means key mismatch
+  }
 }
 
 /**

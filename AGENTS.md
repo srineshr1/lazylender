@@ -1,19 +1,74 @@
 # Agent Guidelines for Kairo
 
-Kairo is a calendar application with WhatsApp integration, built with React, TypeScript, and Supabase.
+Kairo is an intelligent calendar application with WhatsApp integration, built with React, TypeScript, and Supabase.
 
 ## Project Overview
 
 ```
 src/
-├── components/     # React components (Calendar/, Chat/, Modal/, etc.)
-├── contexts/        # React contexts (AuthContext)
-├── hooks/          # Custom hooks (useAsync, useDebounce, etc.)
-├── lib/            # Utilities (dateUtils, validation, supabase, constants)
-├── api/            # API clients (groqClient, whatsappClient)
-├── store/          # Zustand stores (useEventStore, useChatStore)
-├── pages/          # Page components (Login, Signup, etc.)
-└── __tests__/      # Test files
+├── api/                    # API abstraction layer
+│   ├── groqClient.js       # Groq LLM API client
+│   └── whatsappClient.js   # WhatsApp bridge API client
+├── components/             # React components
+│   ├── Calendar/           # Calendar views (WeekView, MonthView, DayView, DayColumn, EventBlock, TopBar)
+│   ├── Chat/               # Chat sidebar & LLM integration (ChatSidebar, useLLM)
+│   ├── Modal/              # Modal dialogs (EventModal, SettingsModal)
+│   │   └── tabs/           # Settings modal tabs (CalendarTab, WhatsAppTab, AppearanceTab, etc.)
+│   ├── Notifications/      # Notification system (NotificationPanel, NotificationItem)
+│   ├── Sidebar/            # Sidebar components (Sidebar, TaskList, MiniCalendar)
+│   ├── WhatsApp/           # WhatsApp integration (WhatsAppSettings, WhatsAppPopup, WhatsAppToast)
+│   ├── ErrorBoundary.jsx   # Error boundary wrapper
+│   ├── Icons.jsx           # Icon components
+│   ├── LoadingSpinner.jsx  # Loading state components
+│   ├── MobileDrawer.jsx    # Mobile navigation drawer
+│   ├── MobileNav.jsx       # Mobile bottom navigation
+│   ├── OfflineIndicator.jsx # Network status indicator
+│   ├── ProtectedRoute.jsx  # Auth route wrapper
+│   ├── PWAInstallPrompt.jsx # PWA installation prompt
+│   └── ToastContainer.jsx  # Toast notification system
+├── contexts/               # React contexts
+│   └── AuthContext.jsx     # Supabase authentication context
+├── hooks/                  # Custom React hooks
+│   ├── useAsync.js         # Async state management
+│   ├── useDebounce.js      # Value debouncing
+│   ├── useLocalStorage.js  # localStorage wrapper
+│   ├── useMediaQuery.js    # Responsive breakpoints
+│   ├── useMobileLayout.js  # Mobile layout detection
+│   ├── useNotificationTriggers.js # Notification scheduling
+│   ├── usePWA.js           # PWA install prompt
+│   ├── useThemeColors.js   # Theme color utilities
+│   ├── useWhatsAppBridgeStatus.js # Bridge connection status
+│   └── useWhatsAppSync.js  # WhatsApp event sync polling
+├── lib/                    # Utility functions
+│   ├── accessibility.js    # Screen reader & focus trap utilities
+│   ├── constants.ts        # App-wide constants (TypeScript)
+│   ├── dateUtils.ts        # Date parsing/formatting (TypeScript)
+│   ├── envConfig.js        # Environment configuration
+│   ├── supabase.js         # Supabase client initialization
+│   ├── supabaseQueries.js  # Supabase query helpers
+│   └── validation.js       # Input validation & sanitization
+├── pages/                  # Page-level components
+│   ├── AuthCallback.jsx    # OAuth callback handler
+│   ├── ForgotPassword.jsx  # Password reset page
+│   ├── Login.jsx           # Login page
+│   └── Signup.jsx          # Registration page
+├── store/                  # Zustand state management
+│   ├── useChatStore.js     # Chat history & AI messages
+│   ├── useDarkStore.js     # Dark mode preference
+│   ├── useEventStore.js    # Event CRUD & sync (localStorage persistence)
+│   ├── useNotificationStore.js # Notification queue & dismissal
+│   ├── useSettingsStore.js # App settings (awake hours, themes, etc.)
+│   ├── useToastStore.js    # Toast notifications
+│   └── useWhatsAppSettings.js # WhatsApp sync preferences
+├── __tests__/              # Test files
+│   ├── App.integration.test.jsx
+│   ├── dateUtils.test.js
+│   ├── useEventStore.test.js
+│   └── validation.test.js
+├── App.jsx                 # Root component with routing
+├── main.jsx                # React entry point
+├── setupTests.js           # Vitest global setup
+└── index.css               # Global styles & Tailwind imports
 ```
 
 ## Build & Test Commands

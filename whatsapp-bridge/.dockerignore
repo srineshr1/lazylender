@@ -4,3 +4,8 @@ node_modules/
 .env
 dist/
 .cache/
+.wwebjs_auth/
+.wwebjs_cache/
+sessions/user_*/
+sessions/*.json
+*.log

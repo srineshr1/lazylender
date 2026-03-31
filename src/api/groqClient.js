@@ -122,6 +122,15 @@ export async function generateText({
   // Determine if we should use bridge proxy
   const useProxy = USE_BRIDGE_PROXY && BRIDGE_URL && getCurrentUserId()
   
+  // Production hard-guard: if bridge proxy is configured, NEVER fall back to direct key
+  if (USE_BRIDGE_PROXY && !BRIDGE_URL) {
+    throw new GroqError(
+      'VITE_USE_BRIDGE_PROXY is true but VITE_BRIDGE_URL is not set. Set VITE_BRIDGE_URL to your Railway service URL.',
+      null,
+      null
+    )
+  }
+
   // Validate - either proxy or direct API key
   if (!useProxy && !GROQ_API_KEY) {
     throw new GroqError(
@@ -326,6 +335,24 @@ export async function generateText({
  * }
  */
 export async function checkHealth() {
+  // If bridge proxy is configured, check the bridge's health endpoint instead.
+  // This avoids using the Groq API key directly in the browser.
+  if (USE_BRIDGE_PROXY && BRIDGE_URL) {
+    try {
+      const userId = getCurrentUserId()
+      if (!userId) return false
+      const res = await fetchWithTimeout(
+        `${BRIDGE_URL}/health`,
+        { method: 'GET' },
+        5000
+      )
+      return res.ok
+    } catch {
+      return false
+    }
+  }
+
+  // Direct key path — only valid in local dev without bridge proxy
   if (!GROQ_API_KEY) {
     return false
   }

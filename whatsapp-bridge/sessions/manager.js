@@ -7,7 +7,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js')
 const fs = require('fs')
 const path = require('path')
 
-const { initUserDir, getUserAuthDir, getUserPublicDir, getAllUserIds } = require('../utils/userData')
+const { initUserDir, getUserAuthDir, getUserPublicDir, getAllUserIds, sanitizeUserId } = require('../utils/userData')
 
 const sessions = new Map()
 let messageHandler = null
@@ -47,14 +47,27 @@ function getClient(userId) {
   // Ensure user directories exist
   initUserDir(userId)
   
+  // Get Chromium path from environment (set in Dockerfile for Railway)
+  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+  
   const client = new Client({
     authStrategy: new LocalAuth({
       dataDir: userAuthDir,
-      clientId: userId
+      clientId: sanitizeUserId(userId)  // Use sanitized ID to match directory structure
     }),
     puppeteer: {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      executablePath: executablePath,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ]
     }
   })
   
@@ -76,11 +89,11 @@ function getClient(userId) {
   })
   
   client.on('qr', (qr) => {
-    // Save QR code to user's public directory
-    const qrPath = path.join(userPublicDir, 'qr.png')
-    const qrData = qr.qrimage
-    fs.writeFileSync(qrPath.replace('.png', '.txt'), qrData)
-    updateUserStatus(userId, { connected: false, qr: qrData, message: 'QR Code generated' })
+    // qr is already a string from whatsapp-web.js
+    // Save QR code string to user's public directory
+    const qrPath = path.join(userPublicDir, 'qr.txt')
+    fs.writeFileSync(qrPath, qr)
+    updateUserStatus(userId, { connected: false, qr: qr, message: 'QR Code generated' })
     console.log(`[SessionManager] QR generated for ${userId}`)
   })
   
@@ -221,6 +234,28 @@ async function cleanupInactiveSessions() {
   return cleaned
 }
 
+/**
+ * Gracefully shutdown all sessions
+ * @returns {Promise<void>}
+ */
+async function shutdown() {
+  console.log('[SessionManager] Shutting down all sessions...')
+  
+  for (const [userId, client] of sessions) {
+    try {
+      if (client) {
+        await client.destroy()
+        console.log(`[SessionManager] Destroyed session for ${userId}`)
+      }
+    } catch (err) {
+      console.error(`[SessionManager] Error destroying session for ${userId}:`, err.message)
+    }
+  }
+  
+  sessions.clear()
+  console.log('[SessionManager] All sessions shut down')
+}
+
 module.exports = {
   initialize,
   setMessageHandler,
@@ -232,5 +267,6 @@ module.exports = {
   hasSession,
   getActiveSessions,
   restoreExistingSessions,
-  cleanupInactiveSessions
+  cleanupInactiveSessions,
+  shutdown
 }

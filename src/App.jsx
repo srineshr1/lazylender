@@ -314,12 +314,12 @@ function CalendarApp() {
     document.documentElement.classList.toggle('dark', isDark)
   }, [isDark])
 
-  // Load test helper in development
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      import('./test-notifications.js').catch(() => {})
-    }
-  }, [])
+  // Load test helper in development (disabled - file missing)
+  // useEffect(() => {
+  //   if (import.meta.env.DEV) {
+  //     import('./test-notifications.js').catch(() => {})
+  //   }
+  // }, [])
 
   const openAdd = (date = null, time = null) =>
     setModal({ open: true, event: null, date, time })
