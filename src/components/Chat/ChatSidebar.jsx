@@ -94,6 +94,7 @@ export default function ChatSidebar({ onClose }) {
   const startHeight = useRef(0)
   const prevMessageCountRef = useRef(0)
   const prevTypingRef = useRef(false)
+  const isInitialMountRef = useRef(true)
 
   const handleMouseMove = (e) => {
     if (isResizing) return
@@ -158,12 +159,17 @@ export default function ChatSidebar({ onClose }) {
   }, [isResizing, resizeEdge])
 
   useEffect(() => {
-    // Only auto-scroll when a new message is added or typing status changes
+    // Scroll to bottom on mount (instant) or when new messages arrive (smooth)
     const currentMessageCount = messages.length
     const messageAdded = currentMessageCount > prevMessageCountRef.current
     const typingStarted = isTyping && !prevTypingRef.current
     
-    if (messageAdded || typingStarted) {
+    if (isInitialMountRef.current) {
+      // On initial mount, scroll instantly to bottom without animation
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+      isInitialMountRef.current = false
+    } else if (messageAdded || typingStarted) {
+      // For new messages, use smooth scroll
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
     
