@@ -4,8 +4,9 @@ const { readUserFile, writeUserFile } = require('./utils/userData')
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const GROQ_API_KEY = process.env.GROQ_API_KEY
-const TEXT_MODEL = process.env.GROQ_TEXT_MODEL || 'llama-3.1-8b-instant'
-const VISION_MODEL = process.env.GROQ_VISION_MODEL || 'meta-llama/llama-4-scout-17b-16e-instruct'
+const TEXT_MODEL = process.env.GROQ_TEXT_MODEL || 'llama-3.3-70b-versatile'
+// Note: Groq doesn't have vision models - for image analysis, we use Claude or Gemini as fallback
+const VISION_MODEL = process.env.GROQ_VISION_MODEL || null
 
 const KEYWORDS = [
   'exam', 'test', 'quiz', 'assignment', 'submission', 'deadline', 'class', 'lecture',
@@ -115,7 +116,13 @@ async function analyzeTextWithGroq(text, groupName) {
 }
 
 async function analyzeImageWithGroq(media, groupName, caption = '') {
-  if (!media?.buffer) return []
+  // Guard: Return empty array if no vision model configured or no media
+  if (!media?.buffer || !VISION_MODEL) {
+    if (!VISION_MODEL) {
+      console.log('[Processor] Skipping image analysis - no vision model configured')
+    }
+    return []
+  }
 
   try {
     const dataUrl = `data:${media.mimeType || 'image/jpeg'};base64,${media.buffer.toString('base64')}`
