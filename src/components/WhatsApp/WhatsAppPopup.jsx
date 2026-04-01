@@ -52,19 +52,19 @@ export default function WhatsAppPopup({ onClose }) {
   const [isSavingGroup, setIsSavingGroup] = useState(false)
 
   const [error, setError] = useState(null)
-  const [view, setView] = useState('status')
+  const [view, setView] = useState('groups')
   const [hasAttemptedAutoConnect, setHasAttemptedAutoConnect] = useState(false)
 
   const meta = useMemo(() => statusMeta(sessionStatus, isConnected), [sessionStatus, isConnected])
 
   useEffect(() => {
-    const handleClickOutside = async (e) => {
+    const handleClickOutside = (e) => {
       if (popupRef.current && !popupRef.current.contains(e.target)) {
-        // Stop QR requests if popup is closed while connecting/showing QR
-        if (qrCode || connecting) {
-          await handleStop()
-        }
         onClose()
+        // Cancel in background
+        if (qrCode || connecting) {
+          handleStop()
+        }
       }
     }
 
@@ -132,7 +132,7 @@ export default function WhatsAppPopup({ onClose }) {
 
       setQrCode(status.qr || null)
 
-      if (status.connected && view === 'status') {
+      if (status.connected) {
         setView('groups')
       }
 
@@ -147,14 +147,17 @@ export default function WhatsAppPopup({ onClose }) {
   useEffect(() => {
     fetchStatus()
     const interval = setInterval(() => {
-      fetchStatus({ silent: true })
+      // Only poll status when needed
+      if (!isConnected || qrCode || connecting) {
+        fetchStatus({ silent: true })
+      }
       if (isConnected) {
         fetchMessages({ silent: true })
       }
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [isConnected])
+  }, [isConnected, qrCode, connecting])
 
   useEffect(() => {
     if (isConnected) {
@@ -183,6 +186,12 @@ export default function WhatsAppPopup({ onClose }) {
   }, [hasAttemptedAutoConnect])
 
   const handleConnect = async () => {
+    // Early return if already connected
+    if (isConnected) {
+      console.warn('Already connected to WhatsApp')
+      return
+    }
+    
     setConnecting(true)
     setError(null)
     setQrCode(null)
@@ -297,27 +306,20 @@ export default function WhatsAppPopup({ onClose }) {
       style={{ maxHeight: '82vh' }}
     >
       <div className="flex items-center justify-between p-4 border-b border-[color:var(--theme-border)]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#25D366] flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold theme-text-primary">WhatsApp</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div className={`w-2 h-2 rounded-full ${toneClass}`} />
-              <p className={`text-xs ${subClass}`}>{meta.label}</p>
-            </div>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <svg className="w-6 h-6 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" />
+          </svg>
+          <h3 className="text-sm font-semibold theme-text-primary">WhatsApp</h3>
+          <div className={`w-2 h-2 rounded-full ${toneClass}`} />
         </div>
         <button 
-          onClick={async () => {
-            // Stop QR requests if closing while connecting/showing QR
-            if (qrCode || connecting) {
-              await handleStop()
-            }
+          onClick={() => {
             onClose()
+            // Cancel in background
+            if (qrCode || connecting) {
+              handleStop()
+            }
           }} 
           className="p-1.5 rounded-lg theme-icon-btn"
         >
@@ -335,79 +337,60 @@ export default function WhatsAppPopup({ onClose }) {
             </div>
           )}
 
-            <div className={`rounded-xl border p-4 ${cardClass}`}>
-            {/* Show different layouts based on QR code presence */}
-            {qrCode ? (
-              // MINIMAL QR View - Just QR + simple instruction
-              <div className="flex flex-col items-center py-6">
-                {/* QR Code - Clean white background */}
-                <div className="bg-white rounded-2xl p-5 shadow-lg">
-                  <QRCodeSVG 
-                    value={qrCode} 
-                    size={220}
-                    level="M" 
-                    includeMargin={false}
-                    bgColor="#ffffff" 
-                    fgColor="#000000" 
-                  />
+            {!isConnected && (
+              <div className={`rounded-xl border p-4 ${cardClass}`}>
+              {/* Show different layouts based on QR code presence */}
+              {qrCode ? (
+                // MINIMAL QR View - Just QR + simple instruction
+                <div className="flex flex-col items-center py-6">
+                  {/* QR Code - Clean white background */}
+                  <div className="bg-white rounded-2xl p-5 shadow-lg">
+                    <QRCodeSVG 
+                      value={qrCode} 
+                      size={220}
+                      level="M" 
+                      includeMargin={false}
+                      bgColor="#ffffff" 
+                      fgColor="#000000" 
+                    />
+                  </div>
+                  
+                  {/* Simple instruction - One line */}
+                  <p className={`text-xs mt-4 ${subClass} text-center max-w-[280px]`}>
+                    Open WhatsApp → Linked Devices → Scan this code
+                  </p>
                 </div>
-                
-                {/* Simple instruction - One line */}
-                <p className={`text-xs mt-4 ${subClass} text-center max-w-[280px]`}>
-                  Open WhatsApp → Linked Devices → Scan this code
-                </p>
-              </div>
-            ) : connecting ? (
-              // LOADING STATE - Show minimal spinner while waiting for QR
-              <div className="flex flex-col items-center py-8">
-                <LoadingSpinner size="md" label="Connecting to WhatsApp" />
-                <p className={`text-xs mt-3 ${subClass}`}>
-                  Preparing QR code...
-                </p>
-              </div>
-            ) : (
-              // Normal status view (no QR code, not connecting)
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-semibold">Connection status</p>
-                  <p className={`text-xs mt-1 ${subClass}`}>{statusMessage}</p>
+              ) : connecting ? (
+                // LOADING STATE - Show minimal spinner while waiting for QR
+                <div className="flex flex-col items-center py-8">
+                  <LoadingSpinner size="md" label="Connecting to WhatsApp" />
+                  <p className={`text-xs mt-3 ${subClass}`}>
+                    Preparing QR code...
+                  </p>
                 </div>
-                {!isConnected ? (
+              ) : (
+                // Normal status view (no QR code, not connecting)
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold">Connection status</p>
+                    <p className={`text-xs mt-1 ${subClass}`}>{statusMessage}</p>
+                  </div>
                   <button
                     onClick={handleConnect}
-                    disabled={connecting}
+                    disabled={connecting || isConnected}
                     className="px-4 py-2.5 rounded-lg text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white disabled:opacity-50 transition-colors"
                   >
                     {connecting ? 'Connecting...' : 'Connect WhatsApp'}
                   </button>
-                ) : (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleDisconnect}
-                      disabled={connecting}
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold ${isDark ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'} disabled:opacity-50`}
-                      title="Disconnect temporarily (can reconnect without QR)"
-                    >
-                      {connecting ? 'Disconnecting...' : 'Disconnect'}
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      disabled={connecting}
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold ${isDark ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' : 'bg-red-50 text-red-600 hover:bg-red-100'} disabled:opacity-50`}
-                      title="Logout permanently (requires QR scan to reconnect)"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
             )}
-          </div>
 
           {isConnected && (
             <>
                <div className="flex gap-2 p-1 rounded-lg glass-subtle">
-                {['groups', 'messages', 'status'].map((tab) => (
+                {['groups', 'messages'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setView(tab)}
@@ -417,7 +400,7 @@ export default function WhatsAppPopup({ onClose }) {
                         : 'theme-text-secondary theme-hover-text'
                     }`}
                   >
-                    {tab === 'groups' ? `Groups (${watchedGroupIds.length})` : tab === 'messages' ? `Messages (${validCount})` : 'Health'}
+                    {tab === 'groups' ? 'Being monitored' : `Messages (${validCount})`}
                   </button>
                 ))}
               </div>
@@ -425,7 +408,12 @@ export default function WhatsAppPopup({ onClose }) {
               {view === 'groups' && (
                 <div className={`rounded-xl border p-3 ${cardClass}`}>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold">Watched groups</p>
+                    <p className="text-xs font-semibold">
+                      {watchedGroupIds.length > 0 
+                        ? `Watching ${watchedGroupIds.length} group${watchedGroupIds.length === 1 ? '' : 's'}`
+                        : 'Select groups to monitor'
+                      }
+                    </p>
                     <button
                       onClick={() => fetchGroups()}
                       disabled={isRefreshingGroups}
@@ -438,7 +426,11 @@ export default function WhatsAppPopup({ onClose }) {
                   {isLoadingInitial ? (
                     <div className={`text-xs ${subClass}`}>Loading groups...</div>
                   ) : groups.length === 0 ? (
-                    <div className={`text-xs ${subClass}`}>No groups found yet.</div>
+                    <div className="text-center py-6">
+                      <p className={`text-xs ${subClass}`}>
+                        No groups found. Add groups or contacts in WhatsApp to monitor them for upcoming events and tasks.
+                      </p>
+                    </div>
                   ) : (
                     <div className="space-y-2 max-h-72 overflow-y-auto">
                       {groups.map((group) => (
@@ -498,38 +490,7 @@ export default function WhatsAppPopup({ onClose }) {
                   )}
                 </div>
               )}
-
-              {view === 'status' && (
-                <div className={`rounded-xl border p-3 ${cardClass}`}>
-                  <p className="text-xs font-semibold mb-2">Connection health</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                     <div className="rounded-lg p-2 glass-subtle">
-                      <p className={subClass}>Session</p>
-                      <p className="font-semibold mt-1">{sessionStatus}</p>
-                    </div>
-                     <div className="rounded-lg p-2 glass-subtle">
-                      <p className={subClass}>Watched groups</p>
-                      <p className="font-semibold mt-1">{watchedGroupIds.length}</p>
-                    </div>
-                     <div className="rounded-lg p-2 glass-subtle">
-                      <p className={subClass}>Recent valid events</p>
-                      <p className="font-semibold mt-1">{validCount}</p>
-                    </div>
-                     <div className="rounded-lg p-2 glass-subtle">
-                      <p className={subClass}>Latest status</p>
-                      <p className="font-semibold mt-1 truncate">{statusMessage}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
-          )}
-
-          {!isConnected && !qrCode && !isLoadingInitial && (
-            <div className={`rounded-xl border p-4 text-center ${cardClass}`}>
-              <p className="text-sm font-semibold mb-1">Connect your WhatsApp</p>
-              <p className={`text-xs ${subClass}`}>We will monitor watched groups and extract upcoming events from text, images, and PDFs.</p>
-            </div>
           )}
         </div>
       </div>
