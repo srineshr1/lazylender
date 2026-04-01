@@ -39,7 +39,7 @@ function ChatMessage({ msg }) {
       >
         <div className="flex flex-col items-end">
           <div className="max-w-[82%] rounded-2xl px-4 py-2.5 glass-subtle border border-accent/30 bg-accent/5 shadow-sm">
-            <div className="text-[13px] leading-relaxed font-sans theme-text-primary">
+            <div className="text-[13px] leading-relaxed font-sans theme-text-primary break-words">
               {msg.text}
             </div>
           </div>
@@ -65,7 +65,7 @@ function ChatMessage({ msg }) {
         </div>
         {/* Message Bubble */}
         <div className="flex-1 max-w-[82%] rounded-2xl px-4 py-2.5 glass-subtle shadow-sm">
-          <div className="text-[13px] leading-relaxed font-sans theme-text-primary" style={{ whiteSpace: 'pre-wrap' }}>
+          <div className="text-[13px] leading-relaxed font-sans theme-text-primary break-words" style={{ whiteSpace: 'pre-wrap' }}>
             {msg.text}
           </div>
         </div>
@@ -277,7 +277,7 @@ export default function ChatSidebar({ onClose }) {
       {/* Messages */}
       <div 
         id={chatRegionId}
-        className="flex-1 overflow-y-auto px-4 py-2 flex flex-col"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 flex flex-col"
         role="log"
         aria-label="Chat messages"
         aria-live="polite"

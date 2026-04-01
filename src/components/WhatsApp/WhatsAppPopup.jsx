@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useDarkStore } from '../../store/useDarkStore'
+import LoadingSpinner from '../LoadingSpinner'
 import {
   connectWhatsApp,
   disconnectWhatsApp,
@@ -57,15 +58,19 @@ export default function WhatsAppPopup({ onClose }) {
   const meta = useMemo(() => statusMeta(sessionStatus, isConnected), [sessionStatus, isConnected])
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handleClickOutside = async (e) => {
       if (popupRef.current && !popupRef.current.contains(e.target)) {
+        // Stop QR requests if popup is closed while connecting/showing QR
+        if (qrCode || connecting) {
+          await handleStop()
+        }
         onClose()
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [onClose])
+  }, [onClose, qrCode, connecting])
 
   useEffect(() => {
     if (!qrCode) return
@@ -288,7 +293,7 @@ export default function WhatsAppPopup({ onClose }) {
   return (
     <div
       ref={popupRef}
-      className={`fixed inset-x-3 top-16 w-auto max-w-[420px] rounded-2xl shadow-2xl border animate-popIn z-50 md:absolute md:inset-x-auto md:top-14 md:right-4 md:w-[400px] ${panelClass}`}
+      className={`fixed inset-x-3 top-16 w-auto max-w-[420px] rounded-2xl shadow-2xl border animate-popIn z-50 overflow-hidden md:absolute md:inset-x-auto md:top-14 md:right-4 md:w-[400px] ${panelClass}`}
       style={{ maxHeight: '82vh' }}
     >
       <div className="flex items-center justify-between p-4 border-b border-[color:var(--theme-border)]">
@@ -306,7 +311,16 @@ export default function WhatsAppPopup({ onClose }) {
             </div>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg theme-icon-btn">
+        <button 
+          onClick={async () => {
+            // Stop QR requests if closing while connecting/showing QR
+            if (qrCode || connecting) {
+              await handleStop()
+            }
+            onClose()
+          }} 
+          className="p-1.5 rounded-lg theme-icon-btn"
+        >
           <svg className={`w-4 h-4 ${subClass}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -323,8 +337,36 @@ export default function WhatsAppPopup({ onClose }) {
 
             <div className={`rounded-xl border p-4 ${cardClass}`}>
             {/* Show different layouts based on QR code presence */}
-            {!qrCode ? (
-              // Normal status view (no QR code)
+            {qrCode ? (
+              // MINIMAL QR View - Just QR + simple instruction
+              <div className="flex flex-col items-center py-6">
+                {/* QR Code - Clean white background */}
+                <div className="bg-white rounded-2xl p-5 shadow-lg">
+                  <QRCodeSVG 
+                    value={qrCode} 
+                    size={220}
+                    level="M" 
+                    includeMargin={false}
+                    bgColor="#ffffff" 
+                    fgColor="#000000" 
+                  />
+                </div>
+                
+                {/* Simple instruction - One line */}
+                <p className={`text-xs mt-4 ${subClass} text-center max-w-[280px]`}>
+                  Open WhatsApp → Linked Devices → Scan this code
+                </p>
+              </div>
+            ) : connecting ? (
+              // LOADING STATE - Show minimal spinner while waiting for QR
+              <div className="flex flex-col items-center py-8">
+                <LoadingSpinner size="md" label="Connecting to WhatsApp" />
+                <p className={`text-xs mt-3 ${subClass}`}>
+                  Preparing QR code...
+                </p>
+              </div>
+            ) : (
+              // Normal status view (no QR code, not connecting)
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold">Connection status</p>
@@ -358,52 +400,6 @@ export default function WhatsAppPopup({ onClose }) {
                     </button>
                   </div>
                 )}
-              </div>
-            ) : (
-              // QR Code view - Full width, centered, clean
-              <div className="text-center">
-                <h4 className="text-sm font-semibold mb-1">Connect WhatsApp</h4>
-                <p className={`text-xs ${subClass} mb-5`}>
-                  Open WhatsApp on your phone → Settings → Linked Devices → Link a Device
-                </p>
-                
-                {/* QR Code - Large and centered */}
-                <div className="bg-white rounded-2xl p-6 inline-block shadow-lg">
-                  <QRCodeSVG 
-                    value={qrCode} 
-                    size={200}
-                    level="M" 
-                    includeMargin={false}
-                    bgColor="#ffffff" 
-                    fgColor="#000000" 
-                  />
-                </div>
-                
-                {/* Timer & Attempt Info */}
-                <div className="mt-4 space-y-2">
-                  <p className={`text-xs font-medium ${subClass}`}>
-                    Scan with WhatsApp mobile app
-                  </p>
-                  <div className="flex items-center justify-center gap-3 text-[11px] theme-text-secondary">
-                    <span className="flex items-center gap-1">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Expires in {qrExpiryCountdown}s
-                    </span>
-                    <span>·</span>
-                    <span>Attempt {qrAttempts}/{maxQrAttempts}</span>
-                  </div>
-                </div>
-                
-                {/* Cancel button */}
-                <button
-                  onClick={handleStop}
-                  disabled={connecting}
-                  className="mt-4 px-4 py-2 rounded-lg text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 disabled:opacity-50 transition-colors"
-                >
-                  {connecting ? 'Stopping...' : 'Cancel'}
-                </button>
               </div>
             )}
           </div>
