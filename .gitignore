@@ -38,6 +38,7 @@ events-queue.json
 .wwebjs_cache
 auth/
 *session*
+!whatsapp-bridge/sessionManager.js
 *.session
 whatsapp-session.json
 .api_keys

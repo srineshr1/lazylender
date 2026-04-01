@@ -31,7 +31,7 @@ RUN npm ci --only=production
 # Copy application files
 COPY . .
 
-# Create directories for sessions and auth
+# Create directories for auth and cache
 RUN mkdir -p sessions .wwebjs_auth .wwebjs_cache
 
 # Run as non-root user for security

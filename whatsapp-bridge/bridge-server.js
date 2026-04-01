@@ -8,7 +8,7 @@ const axios = require('axios')
 require('dotenv').config()
 
 const { bridgeAuthMiddleware, validateUserParam, getOrCreateApiKey } = require('./middleware/bridgeAuth')
-const sessionManager = require('./sessions/manager')
+const sessionManager = require('./sessionManager')
 const { 
   readUserFile, 
   writeUserFile, 

@@ -8,4 +8,6 @@ dist/
 .wwebjs_cache/
 sessions/user_*/
 sessions/*.json
+# IMPORTANT: Keep sessions/manager.js - it's required code
+!sessions/manager.js
 *.log
