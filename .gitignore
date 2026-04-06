@@ -1,8 +1,8 @@
-# Dependency directories
+# Dependencies
 node_modules/
 jspm_packages/
 
-# Build artifacts
+# Build outputs
 dist/
 dist-ssr/
 out/
@@ -10,11 +10,12 @@ build/
 *.zip
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+bridge.log
 
 # Environment variables
 .env
@@ -22,20 +23,27 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.example
 *.local
 whatsapp-bridge/.env
 
-# WhatsApp Bridge Session & Sensitive Data
+# WhatsApp Bridge session data
 .wwebjs_auth/
 .wwebjs_cache/
 whatsapp-bridge/.wwebjs_auth/
 whatsapp-bridge/.wwebjs_cache/
-# Don't ignore sessions/manager.js (source code)
 whatsapp-bridge/sessions/
 !whatsapp-bridge/sessions/manager.js
 events-queue.json
-.wwebjs_auth
-.wwebjs_cache
+whatsapp-bridge/events-queue.json
+whatsapp-bridge/public/events-queue.json
+whatsapp-bridge/config/api-keys.json
+
+# WhatsApp QR codes
+whatsapp-qr-*.png
+qr-code-displayed.png
+
+# Auth files
 auth/
 *session*
 !whatsapp-bridge/sessionManager.js
@@ -44,20 +52,12 @@ whatsapp-session.json
 .api_keys
 bridge-middleware/
 
-# Dynamic Data
-whatsapp-bridge/public/
-events-queue.json
-whatsapp-bridge/events-queue.json
-whatsapp-bridge/public/events-queue.json
-whatsapp-bridge/config/api-keys.json
-
-# Generated Assets
-whatsapp-qr-*.png
-qr-code-displayed.png
+# Debug screenshots and images
+*.png
+!docs/week-view.png
 
 # Secrets
 client_secret_*.json
-whatsapp-bridge/config/api-keys.json
 
 # Windows Reserved Names
 nul
@@ -66,11 +66,11 @@ nul
 .firebase/
 firebase-debug*.log
 firestore-debug*.log
+.firebase-cache/
 
 # Playwright
 playwright-report/
 test-results/
-*.png
 
 # Editor directories and files
 .vscode/*
@@ -82,3 +82,31 @@ test-results/
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+Thumbs.db
+
+# Temp files
+page-state
+*.tmp
+*.temp
+
+# Cache
+.cache/
+.parcel-cache/
+.turbo/
+.vite/
+.svelte-kit/
+
+# Package managers
+pnpm-lock.yaml
+yarn.lock
+npm-shrinkwrap.json
+
+# Deployment configs (keep for reference only if needed)
+whatsapp-bridge/.railwayignore
+whatsapp-bridge/.dockerignore
+
+# Debug files
+*.mjs
+*.cjs

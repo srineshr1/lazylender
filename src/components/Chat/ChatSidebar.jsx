@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useId } from 'react'
 import { useChatStore } from '../../store/useChatStore'
 import { useLLM } from './useLLM'
+import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const RESIZE_EDGE_THRESHOLD = 6
 
@@ -77,6 +78,7 @@ function ChatMessage({ msg }) {
 export default function ChatSidebar({ onClose }) {
   const { messages, isTyping, isOnline, error, clearError } = useChatStore()
   const { send } = useLLM()
+  const isMobile = useIsMobile()
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [height, setHeight] = useState(600)
@@ -215,22 +217,32 @@ export default function ChatSidebar({ onClose }) {
     ? 'ns-resize'
     : undefined
 
-  return (
-    <aside 
-      ref={sidebarRef}
-      className={`flex-shrink-0 border flex flex-col rounded-2xl shadow-2xl overflow-hidden glass-panel ${isResizing ? 'select-none' : ''}`}
-      role="complementary"
-      aria-label="AI chat assistant"
-      style={{ 
+  // On mobile, use full height/width from parent container (MobileDrawer)
+  // On desktop, use resizable dimensions
+  const containerStyle = isMobile
+    ? { height: '100%', width: '100%' }
+    : { 
         height: `${height}px`,
         width: `${width}px`,
         minWidth: '280px',
         maxWidth: '600px',
         maxHeight: '85vh',
         cursor: cursorStyle,
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => setNearEdge(null)}
+      }
+
+  return (
+    <aside 
+      ref={sidebarRef}
+      className={`flex-shrink-0 flex flex-col overflow-hidden ${
+        isMobile 
+          ? 'h-full w-full' 
+          : `border rounded-2xl shadow-2xl glass-panel ${isResizing ? 'select-none' : ''}`
+      }`}
+      role="complementary"
+      aria-label="AI chat assistant"
+      style={containerStyle}
+      onMouseMove={isMobile ? undefined : handleMouseMove}
+      onMouseLeave={isMobile ? undefined : () => setNearEdge(null)}
     >
       {/* Header */}
       <header className="px-4 pt-4 pb-3 border-b border-[color:var(--theme-border)] flex-shrink-0 flex items-center justify-between">
@@ -306,8 +318,8 @@ export default function ChatSidebar({ onClose }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="px-4 pb-4 pt-2 flex-shrink-0">
+      {/* Input - extra bottom padding on mobile for MobileNav and safe area */}
+      <div className={`px-4 pt-2 flex-shrink-0 ${isMobile ? 'pb-20' : 'pb-4'}`} style={isMobile ? { paddingBottom: 'max(80px, calc(64px + env(safe-area-inset-bottom)))' } : undefined}>
         <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 focus-within:border-accent/50 transition-colors glass-subtle">
           <label htmlFor="chat-input" className="sr-only">Message to AI assistant</label>
           <textarea
@@ -333,23 +345,28 @@ export default function ChatSidebar({ onClose }) {
         <p id="chat-input-hint" className="text-[10.5px] text-center mt-1.5 theme-text-secondary">Enter to send · Shift+Enter for new line</p>
       </div>
 
-      {/* Left edge resize zone */}
-      <div
-        className="absolute top-0 bottom-0 left-0 w-6 -ml-3"
-        onMouseDown={(e) => handleMouseDown(e, 'left')}
-      />
+      {/* Resize zones - desktop only */}
+      {!isMobile && (
+        <>
+          {/* Left edge resize zone */}
+          <div
+            className="absolute top-0 bottom-0 left-0 w-6 -ml-3"
+            onMouseDown={(e) => handleMouseDown(e, 'left')}
+          />
 
-      {/* Top edge resize zone */}
-      <div
-        className="absolute top-0 left-0 right-0 h-6 -mt-3"
-        onMouseDown={(e) => handleMouseDown(e, 'top')}
-      />
+          {/* Top edge resize zone */}
+          <div
+            className="absolute top-0 left-0 right-0 h-6 -mt-3"
+            onMouseDown={(e) => handleMouseDown(e, 'top')}
+          />
 
-      {/* Top-left corner resize zone */}
-      <div
-        className="absolute top-0 left-0 w-6 h-6 -ml-3 -mt-3 cursor-nwse-resize"
-        onMouseDown={(e) => handleMouseDown(e, 'corner')}
-      />
+          {/* Top-left corner resize zone */}
+          <div
+            className="absolute top-0 left-0 w-6 h-6 -ml-3 -mt-3 cursor-nwse-resize"
+            onMouseDown={(e) => handleMouseDown(e, 'corner')}
+          />
+        </>
+      )}
     </aside>
   )
 }

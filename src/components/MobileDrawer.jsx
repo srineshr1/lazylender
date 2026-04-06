@@ -71,16 +71,17 @@ export default function MobileDrawer({
         aria-hidden="true"
       />
       
-      {/* Drawer panel */}
+      {/* Drawer panel - bottom padding accounts for MobileNav (64px) + safe area */}
       <div
         ref={drawerRef}
         role="dialog"
         aria-modal="true"
         aria-label={title || 'Panel'}
         tabIndex={-1}
-        className={`absolute top-0 bottom-0 ${slideClass} w-[85%] max-w-sm flex flex-col ${
+        className={`absolute top-0 ${slideClass} w-[85%] max-w-sm flex flex-col ${
           isDark ? 'bg-sidebar' : 'bg-white'
         } shadow-2xl ${className}`}
+        style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
       >
         {/* Header with close button */}
         {title && (

@@ -129,7 +129,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
   // Sanitize title/sub on input change for immediate feedback
   const handleInputChange = (key, value) => {
     const sanitizedValue = (key === 'title' || key === 'sub') 
-      ? sanitizeString(value) 
+      ? sanitizeString(value, false) 
       : value
     set(key, sanitizedValue)
   }
@@ -139,18 +139,26 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
     setValidationErrors({})
     setIsSaving(true)
     
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setIsSaving(false)
+      setValidationErrors({ general: 'Request timed out. Please try again.' })
+      announce('Request timed out. Please try again.', 'assertive')
+    }, 15000) // 15 second timeout
+    
     try {
-      // Sanitize user inputs before validation
+      // Sanitize user inputs before validation (trim on save)
       const sanitizedForm = {
         ...form,
-        title: sanitizeString(form.title),
-        sub: sanitizeString(form.sub),
+        title: sanitizeString(form.title, true),
+        sub: sanitizeString(form.sub, true),
       }
       
       // Validate the form
       const validation = validateEvent(sanitizedForm)
       
       if (!validation.isValid) {
+        clearTimeout(timeoutId)
         setValidationErrors(validation.errors)
         setIsSaving(false)
         // Announce validation errors to screen readers
@@ -162,6 +170,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
       // Handle recurring event editing
       if (isEditing) {
         if (editTarget.recurrence && editTarget.recurrence !== 'none') {
+          clearTimeout(timeoutId)
           setShowRecurringPrompt(true)
           setIsSaving(false)
           return
@@ -173,12 +182,15 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
         announce('Event created successfully', 'polite')
       }
       
+      clearTimeout(timeoutId)
       // Small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 300))
       setIsSaving(false)
       onClose()
     } catch (error) {
-      setValidationErrors({ general: error.message || 'Failed to save event' })
+      clearTimeout(timeoutId)
+      console.error('Event save error:', error)
+      setValidationErrors({ general: error.message || 'Failed to save event. Please try again.' })
       setIsSaving(false)
       announce(`Error: ${error.message || 'Failed to save event'}`, 'assertive')
     }
@@ -186,15 +198,26 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
 
   const handleRecurringChoice = async (editAll) => {
     setIsSaving(true)
+    
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setIsSaving(false)
+      setValidationErrors({ general: 'Request timed out. Please try again.' })
+      announce('Request timed out. Please try again.', 'assertive')
+    }, 15000)
+    
     try {
       await editEvent(editTarget.id, form, editAll)
+      clearTimeout(timeoutId)
       await new Promise(resolve => setTimeout(resolve, 300))
       setShowRecurringPrompt(false)
       setIsSaving(false)
       announce(editAll ? 'All occurrences updated' : 'This occurrence updated', 'polite')
       onClose()
     } catch (error) {
-      setValidationErrors({ general: error.message || 'Failed to save event' })
+      clearTimeout(timeoutId)
+      console.error('Recurring event update error:', error)
+      setValidationErrors({ general: error.message || 'Failed to save event. Please try again.' })
       setIsSaving(false)
       announce(`Error: ${error.message || 'Failed to save event'}`, 'assertive')
     }
@@ -202,14 +225,25 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
 
   const handleDelete = async () => {
     setIsSaving(true)
+    
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setIsSaving(false)
+      setValidationErrors({ general: 'Request timed out. Please try again.' })
+      announce('Request timed out. Please try again.', 'assertive')
+    }, 15000)
+    
     try {
       if (editTarget) await deleteEvent(editTarget.id)
+      clearTimeout(timeoutId)
       await new Promise(resolve => setTimeout(resolve, 300))
       setIsSaving(false)
       announce('Event deleted', 'polite')
       onClose()
     } catch (error) {
-      setValidationErrors({ general: error.message || 'Failed to delete event' })
+      clearTimeout(timeoutId)
+      console.error('Event delete error:', error)
+      setValidationErrors({ general: error.message || 'Failed to delete event. Please try again.' })
       setIsSaving(false)
       announce(`Error: ${error.message || 'Failed to delete event'}`, 'assertive')
     }
@@ -228,7 +262,7 @@ export default function EventModal({ isOpen, onClose, editEvent: editTarget, def
     >
       <div 
         ref={modalRef}
-        className="rounded-2xl p-6 w-[420px] max-h-[90vh] overflow-y-auto shadow-2xl animate-modalIn glass-panel glass-modal"
+        className="rounded-2xl p-4 sm:p-6 w-[calc(100vw-32px)] sm:w-[420px] max-w-[420px] max-h-[90vh] overflow-y-auto shadow-2xl animate-modalIn glass-panel glass-modal"
         role="document"
       >
         {showRecurringPrompt ? (

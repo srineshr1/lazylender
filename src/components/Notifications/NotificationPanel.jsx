@@ -83,7 +83,7 @@ export default function NotificationPanel() {
   return (
     <div
       ref={panelRef}
-      className="absolute top-full right-0 mt-2 w-[380px] max-h-[480px] rounded-2xl shadow-2xl overflow-hidden animate-slide-down z-50 glass-panel"
+      className="absolute top-full right-0 mt-2 w-[calc(100vw-24px)] sm:w-[380px] max-w-[380px] max-h-[480px] rounded-2xl shadow-2xl overflow-hidden animate-slide-down z-50 glass-panel"
     >
       {/* Header */}
       <div

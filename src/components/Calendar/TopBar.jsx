@@ -112,7 +112,8 @@ export default function TopBar({
         />
       </div>
 
-      <div className="flex-1" />
+      {/* Spacer - use min-width for stable positioning */}
+      <div className="flex-1 min-w-2 sm:min-w-4" />
 
       {/* View tabs — Day / Week / Month */}
       <nav aria-label="Calendar view">
@@ -139,14 +140,15 @@ export default function TopBar({
         </div>
       </nav>
 
-      <div className="flex-1" />
+      {/* Spacer - use min-width for stable positioning */}
+      <div className="flex-1 min-w-2 sm:min-w-4" />
 
       <div className="flex gap-1" role="toolbar" aria-label="Calendar actions">
-        {/* Drag & Drop toggle - only show in Day and Week views */}
+        {/* Drag & Drop toggle - only show in Day and Week views, hidden on mobile */}
         {(activeView === 'Day' || activeView === 'Week') && (
           <button
             onClick={() => updateSetting('dragDropEnabled', !dragDropEnabled)}
-            className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11.5px] font-medium transition-all duration-150 whitespace-nowrap ${
+            className={`hidden sm:flex px-2.5 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-[11.5px] font-medium transition-all duration-150 whitespace-nowrap ${
               dragDropEnabled
                 ? 'text-white shadow-sm'
                 : 'theme-text-secondary hover:bg-black/5 theme-hover-text'
@@ -158,7 +160,8 @@ export default function TopBar({
             Drag & Drop: {dragDropEnabled ? 'On' : 'Off'}
           </button>
         )}
-        <div className="relative">
+        {/* WhatsApp - hidden on mobile (show "use desktop" message in popup instead) */}
+        <div className="relative hidden sm:block">
           <button
             onClick={() => setWhatsappOpen(!whatsappOpen)}
             className="relative w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center"
@@ -186,6 +189,7 @@ export default function TopBar({
         >
           <Icon name={isDark ? 'sun' : 'moon'} className="w-4 h-4" aria-hidden="true" />
         </button>
+        {/* Add event button - always visible */}
         <button
           onClick={onAddEvent}
           className="w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center"
@@ -194,9 +198,9 @@ export default function TopBar({
           <Icon name="plus" className="w-4 h-4" aria-hidden="true" />
         </button>
         
-        {/* User menu - only show if authenticated */}
+        {/* User menu - only show if authenticated, hidden on mobile */}
         {authEnabled && user && (
-          <div className="relative">
+          <div className="relative hidden sm:block">
             <button 
               ref={userButtonRef}
               onClick={() => setShowUserMenu(!showUserMenu)}
@@ -231,10 +235,10 @@ export default function TopBar({
           </div>
         )}
         
-        {/* If not authenticated, just show plain user icon */}
+        {/* If not authenticated, just show plain user icon - hidden on mobile */}
         {(!authEnabled || !user) && (
           <button 
-            className="w-8 h-8 rounded-lg theme-icon-btn flex items-center justify-center" 
+            className="hidden sm:flex w-8 h-8 rounded-lg theme-icon-btn items-center justify-center" 
             aria-label="Profile (not signed in)"
           >
             <Icon name="user" className="w-4 h-4" aria-hidden="true" />

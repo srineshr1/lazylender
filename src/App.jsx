@@ -71,6 +71,18 @@ function CalendarApp() {
     setSelectedDate(date)
     setActiveView('Day')
   }
+
+  // Jump to today in all views
+  const handleTodayClick = () => {
+    const today = new Date()
+    setSelectedDate(today)
+    // Jump week view to current week
+    useEventStore.getState().jumpToDate(today)
+    // If in day view, update to today
+    if (activeView === 'Day') {
+      setSelectedDate(today)
+    }
+  }
   
   // Initialize Supabase data when user logs in
   useEffect(() => {
@@ -350,6 +362,7 @@ function CalendarApp() {
           <WeekView
             onEventClick={openEdit}
             onSlotClick={(date, time) => openAdd(date, time)}
+            onNavigateToDay={navigateToDay}
           />
         )
       case 'Day':
@@ -460,7 +473,7 @@ function CalendarApp() {
               activePanel={activePanel}
               onSidebarClick={toggleSidebar}
               onChatClick={toggleChat}
-              onAddClick={() => openAdd()}
+              onTodayClick={handleTodayClick}
             />
           )}
 

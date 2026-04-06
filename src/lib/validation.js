@@ -36,7 +36,7 @@ export function validateEvent(event) {
   // Time validation (must be HH:MM format, 24-hour)
   if (!event.time || typeof event.time !== 'string') {
     errors.time = 'Time is required'
-  } else if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(event.time)) {
+  } else if (!/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(event.time)) {
     errors.time = 'Time must be in HH:MM format (24-hour)'
   }
 
@@ -118,14 +118,16 @@ function containsHtmlTags(str) {
  * @param {string} str - String to sanitize
  * @returns {string}
  */
-export function sanitizeString(str) {
+export function sanitizeString(str, shouldTrim = true) {
   if (typeof str !== 'string') return ''
   
-  // Remove HTML tags
-  return str.replace(/<[^>]*>/g, '')
+  // Remove HTML tags and dangerous patterns
+  let result = str.replace(/<[^>]*>/g, '')
     .replace(/javascript:/gi, '')
     .replace(/on\w+\s*=/gi, '')
-    .trim()
+  
+  // Only disable trimming when explicitly requested (e.g., while typing)
+  return shouldTrim ? result.trim() : result
 }
 
 /**
@@ -184,7 +186,7 @@ export function validateAndSanitizeEvent(event) {
 
   return {
     ...event,
-    title: sanitizeString(event.title),
-    sub: event.sub ? sanitizeString(event.sub) : '',
+    title: sanitizeString(event.title, true),
+    sub: event.sub ? sanitizeString(event.sub, true) : '',
   }
 }

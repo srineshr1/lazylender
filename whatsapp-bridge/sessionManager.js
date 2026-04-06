@@ -71,8 +71,45 @@ function getClient(userId) {
     }
   })
   
-  client.on('message', (msg) => {
+  client.on('message', async (msg) => {
     if (messageHandler) {
+      const chatId = msg.from  // e.g., "123456789@g.us" or "123456789@c.us"
+      
+      // Check if this chat is in watched groups
+      const watchedGroups = readUserFile(userId, 'watched-groups.json') || []
+      
+      // If no groups selected, skip all messages (require explicit selection)
+      if (watchedGroups.length === 0) {
+        console.log(`[SessionManager] No watched groups configured for ${userId}, skipping message`)
+        return
+      }
+      
+      const isWatched = watchedGroups.some(g => g.id === chatId)
+      
+      if (!isWatched) {
+        // Get chat name for logging
+        let chatName = 'Unknown'
+        try {
+          const chat = await msg.getChat()
+          chatName = chat.name || chat.id.user || 'Unknown'
+        } catch {
+          chatName = msg.from.includes('@g.us') ? 'Group' : 'Contact'
+        }
+        console.log(`[SessionManager] Skipping message from non-watched chat: ${chatName} (${chatId.slice(0, 20)}...)`)
+        return
+      }
+      
+      // Message is from a watched group/contact, process it
+      let groupName = null
+      if (msg.from.includes('@g.us')) {
+        try {
+          const chat = await msg.getChat()
+          groupName = chat.name || 'Unknown Group'
+        } catch {
+          groupName = 'Unknown Group'
+        }
+      }
+      
       const messageData = {
         id: msg.id._serialized,
         from: msg.from,
@@ -82,7 +119,7 @@ function getClient(userId) {
         hasMedia: msg.hasMedia,
         messageType: msg.type,
         groupId: msg.from.includes('@g.us') ? msg.from : null,
-        groupName: msg.from.includes('@g.us') ? (msg.chat?.name || 'Unknown Group') : null,
+        groupName: groupName,
       }
       messageHandler(userId, messageData)
     }

@@ -34,16 +34,19 @@ function transformEventToDB(appEvent) {
 function sanitizeEvent(ev) {
   return {
     ...ev,
-    title: typeof ev.title === 'string' ? sanitizeString(ev.title) : ev.title,
-    sub: typeof ev.sub === 'string' ? sanitizeString(ev.sub) : ev.sub,
+    title: typeof ev.title === 'string' ? sanitizeString(ev.title, true) : ev.title,
+    sub: typeof ev.sub === 'string' ? sanitizeString(ev.sub, true) : ev.sub,
   }
 }
 
 const genId = () => 'e' + Date.now() + Math.random().toString(36).slice(2, 6)
 const logId = () => 'l' + Date.now() + Math.random().toString(36).slice(2, 6)
 
-const today = new Date()
+// Helper to get current date (called fresh each time to avoid stale dates)
+const getToday = () => new Date()
+
 const wd = (offset) => {
+  const today = getToday()
   const monday = new Date(today)
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + offset)
   return fmtDate(monday)
@@ -69,7 +72,7 @@ export const STATUS_STYLES = {
 export const useEventStore = create((set, get) => ({
       events: [],
       taskLog: [],
-      currentWeekStart: getWorkWeekStart(today),
+      currentWeekStart: getWorkWeekStart(getToday()),
       searchQuery: '',
       awakeStart: 6,
       awakeEnd: 24,

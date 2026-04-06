@@ -417,7 +417,16 @@ app.post('/users/:userId/watched-groups', validateUserParam, (req, res) => {
     
     writeUserFile(userId, 'watched-groups.json', validGroups)
     
-    console.log(`[Watched Groups] Updated for ${userId}: ${validGroups.length} groups`)
+    // Clear old incoming messages that are not from watched groups
+    const watchedIds = new Set(validGroups.map(g => g.id))
+    const existingMessages = readUserFile(userId, 'incoming-messages.json') || []
+    const filteredMessages = existingMessages.filter(msg => {
+      const chatId = msg.groupId || msg.from
+      return watchedIds.has(chatId)
+    })
+    writeUserFile(userId, 'incoming-messages.json', filteredMessages)
+    
+    console.log(`[Watched Groups] Updated for ${userId}: ${validGroups.length} groups, filtered ${existingMessages.length - filteredMessages.length} old messages`)
     
     res.json({ 
       success: true,

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { useDarkStore } from '../../store/useDarkStore'
+import { useIsMobile } from '../../hooks/useMediaQuery'
 import LoadingSpinner from '../LoadingSpinner'
 import {
   connectWhatsApp,
@@ -32,6 +33,7 @@ function formatTime(ts) {
 
 export default function WhatsAppPopup({ onClose }) {
   const { isDark } = useDarkStore()
+  const isMobile = useIsMobile()
   const popupRef = useRef(null)
 
   const [connecting, setConnecting] = useState(false)
@@ -174,8 +176,22 @@ export default function WhatsAppPopup({ onClose }) {
   const fetchMessages = async ({ silent = false } = {}) => {
     if (!silent) setIsRefreshingMessages(true)
     try {
-      const messages = await getRecentMessages()
-      setRecentMessages(messages.slice(0, 20))
+      const [messages, watched] = await Promise.all([
+        getRecentMessages(),
+        getWatchedGroups()
+      ])
+      
+      // Filter messages to only show those from watched groups/contacts
+      const watchedIds = new Set(watched.map(g => g.id))
+      const filteredMessages = messages.filter(msg => {
+        // If no watched groups, show nothing
+        if (watchedIds.size === 0) return false
+        // Check if message is from a watched group/contact
+        const chatId = msg.groupId || msg.from
+        return watchedIds.has(chatId)
+      })
+      
+      setRecentMessages(filteredMessages.slice(0, 20))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -402,7 +418,22 @@ export default function WhatsAppPopup({ onClose }) {
         {/* Disconnected State */}
         {!isConnected && (
           <div className={`rounded-xl border p-4 ${cardClass}`}>
-            {qrCode ? (
+            {/* Mobile: Show "Use Desktop" message */}
+            {isMobile ? (
+              <div className="flex flex-col items-center py-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h4 className="text-sm font-semibold theme-text-primary mb-2">
+                  Use Desktop to Connect
+                </h4>
+                <p className={`text-xs ${subClass} max-w-[280px]`}>
+                  WhatsApp connection requires scanning a QR code with your phone. Please use the desktop version of this app to connect WhatsApp.
+                </p>
+              </div>
+            ) : qrCode ? (
               <div className="flex flex-col items-center py-6">
                 <div className="bg-white rounded-2xl p-5 shadow-lg">
                   <QRCodeSVG value={qrCode} size={220} level="M" includeMargin={false} bgColor="#ffffff" fgColor="#000000" />

@@ -20,7 +20,7 @@ import { Icon } from '../Icons'
 
 const HOURS = Array.from({ length: TOTAL_HOURS }, (_, i) => i)
 
-export default function WeekView({ onEventClick, onSlotClick }) {
+export default function WeekView({ onEventClick, onSlotClick, onNavigateToDay }) {
   const {
     events, currentWeekStart, prevWeek, nextWeek,
     searchQuery, reschedule,
@@ -132,6 +132,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
         <button
           onClick={() => navigate('left')}
           className="w-7 h-7 rounded-lg flex items-center justify-center theme-icon-btn"
+          aria-label="Previous week"
         >
           <Icon name="chevronLeft" className="w-4 h-4" />
         </button>
@@ -141,6 +142,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
         <button
           onClick={() => navigate('right')}
           className="w-7 h-7 rounded-lg flex items-center justify-center theme-icon-btn"
+          aria-label="Next week"
         >
           <Icon name="chevronRight" className="w-4 h-4" />
         </button>
@@ -222,7 +224,11 @@ export default function WeekView({ onEventClick, onSlotClick }) {
               {days.map((d) => {
                 const today = isToday(d)
                 return (
-                  <div key={fmtDate(d)} className="py-3 text-center">
+                  <button
+                    key={fmtDate(d)}
+                    onClick={() => onNavigateToDay && onNavigateToDay(d)}
+                    className="py-3 text-center cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-lg"
+                  >
                     <span className={`
                       text-[26px] font-light leading-none font-display
                       ${today
@@ -234,7 +240,7 @@ export default function WeekView({ onEventClick, onSlotClick }) {
                     <span className="text-[11px] uppercase tracking-wide theme-text-secondary mt-1 block">
                       {format(d, 'EEE')}
                     </span>
-                  </div>
+                  </button>
                 )
               })}
             </div>
