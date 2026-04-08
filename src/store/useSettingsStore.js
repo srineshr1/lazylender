@@ -28,6 +28,7 @@ export const useSettingsStore = create((set, get) => ({
       savingKeys: {},
       supabase: null,
       userId: null,
+      realtimeSubscription: null,
       deviceBlurLevel: 'full',  // Auto-detected device capability: 'none' | 'reduced' | 'full'
 
       updateSetting: (key, value) => {
@@ -143,8 +144,15 @@ export const useSettingsStore = create((set, get) => ({
       subscribeToSettings: (supabase, userId) => {
         if (!supabase || !userId) return
 
+        const { realtimeSubscription } = get()
+        if (realtimeSubscription) {
+          realtimeSubscription.unsubscribe()
+        }
+
+        const channelName = `settings_changes_${userId}_${Date.now()}`
+
         const subscription = supabase
-          .channel('settings_changes')
+          .channel(channelName)
           .on('postgres_changes', {
             event: 'UPDATE',
             schema: 'public',
@@ -167,14 +175,16 @@ export const useSettingsStore = create((set, get) => ({
             }
           })
 
+        set({ realtimeSubscription: subscription })
         return subscription
       },
 
       unsubscribeFromSettings: (subscription) => {
-        if (subscription) {
-          subscription.unsubscribe()
-          console.log('[Settings] Unsubscribed from settings')
-        }
+        const activeSub = subscription || get().realtimeSubscription
+        if (!activeSub) return
+        activeSub.unsubscribe()
+        set({ realtimeSubscription: null })
+        console.log('[Settings] Unsubscribed from settings')
       },
 
       saveChanges: () => {

@@ -6,7 +6,7 @@ import { useDarkStore } from '../../store/useDarkStore'
 import { useEventStore } from '../../store/useEventStore'
 import { fmtDate } from '../../lib/dateUtils'
 
-export default function Sidebar({ onAddEvent }) {
+export default function Sidebar({ onAddEvent, onImportTimetable }) {
   const [todayOpen, setTodayOpen] = useState(true)
   const [thisMonthOpen, setThisMonthOpen] = useState(true)
   const [notesOpen, setNotesOpen] = useState(false)
@@ -123,13 +123,28 @@ export default function Sidebar({ onAddEvent }) {
 
       {/* Add section button */}
       <button
-        className="sidebar-add-section mx-3 mb-4 px-3.5 py-2.5 rounded-xl text-[12.5px] flex items-center justify-center gap-1.5 sidebar-fade-in"
+        className="sidebar-add-section mx-3 mb-2 px-3.5 py-2.5 rounded-xl text-[12.5px] flex items-center justify-center gap-1.5 sidebar-fade-in"
         style={{ animationDelay: '150ms' }}
         aria-label="Add new section"
       >
         <Icon name="plus" className="w-3 h-3" aria-hidden="true" />
         Add section
       </button>
+
+      {/* Import Timetable button */}
+      {onImportTimetable && (
+        <button
+          onClick={onImportTimetable}
+          className="mx-3 mb-4 px-3.5 py-2.5 rounded-xl text-[12.5px] flex items-center justify-center gap-2 sidebar-fade-in bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 transition-colors"
+          style={{ animationDelay: '180ms' }}
+          aria-label="Import timetable from image or PDF"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Import Timetable
+        </button>
+      )}
 
       <div className="sidebar-divider h-px mx-3" role="separator" aria-hidden="true" />
 

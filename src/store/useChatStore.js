@@ -3,7 +3,7 @@ import { create } from 'zustand'
 const SYSTEM_MESSAGE = {
   id: 'm0',
   role: 'system',
-  text: 'Chat with your calendar. Try: "Add a meeting on Friday at 2pm" or "What do I have tomorrow?"'
+  text: 'Chat with your calendar. Try: "Add a meeting on Friday at 2pm", "What do I have tomorrow?", or upload a timetable image to import your schedule!'
 }
 
 export const useChatStore = create((set, get) => ({
@@ -14,6 +14,7 @@ export const useChatStore = create((set, get) => ({
       model: 'llama-3.3-70b-versatile',
       supabase: null,
       userId: null,
+      realtimeSubscription: null,
 
       setModel: (model) => set({ model }),
       setOnline: (v) => set({ isOnline: v }),
@@ -54,8 +55,15 @@ export const useChatStore = create((set, get) => ({
       subscribeToMessages: (supabase, userId) => {
         if (!supabase || !userId) return
 
+        const { realtimeSubscription } = get()
+        if (realtimeSubscription) {
+          realtimeSubscription.unsubscribe()
+        }
+
+        const channelName = `chat_messages_changes_${userId}_${Date.now()}`
+
         const subscription = supabase
-          .channel('chat_messages_changes')
+          .channel(channelName)
           .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
@@ -91,14 +99,16 @@ export const useChatStore = create((set, get) => ({
             }
           })
 
+        set({ realtimeSubscription: subscription })
         return subscription
       },
 
       unsubscribeFromMessages: (subscription) => {
-        if (subscription) {
-          subscription.unsubscribe()
-          console.log('[Chat] Unsubscribed from messages')
-        }
+        const activeSub = subscription || get().realtimeSubscription
+        if (!activeSub) return
+        activeSub.unsubscribe()
+        set({ realtimeSubscription: null })
+        console.log('[Chat] Unsubscribed from messages')
       },
 
       addMessage: async (msg) => {
@@ -109,7 +119,9 @@ export const useChatStore = create((set, get) => ({
         
         const newMessage = {
           id: tempId,
-          ...msg
+          ...msg,
+          // Ensure attachments is always an array if present
+          attachments: msg.attachments || undefined,
         }
 
         // Optimistically add to UI immediately
@@ -118,17 +130,24 @@ export const useChatStore = create((set, get) => ({
         }))
 
         // Don't persist system messages to database
+        // Note: Attachments are NOT persisted to database (too large), only shown in current session
         if (supabase && userId && msg.role !== 'system') {
           try {
             // Map 'ai' role to 'assistant' for database compatibility
             const dbRole = msg.role === 'ai' ? 'assistant' : msg.role
+            
+            // Don't store attachment data in database (base64 is too large)
+            // Store a reference note if there were attachments
+            const contentWithAttachmentNote = msg.attachments?.length 
+              ? `${msg.text}\n\n[Attached: ${msg.attachments.map(a => a.name).join(', ')}]`
+              : msg.text
             
             const { data, error } = await supabase
               .from('chat_messages')
               .insert([{
                 // Don't include 'id' - let Supabase generate UUID
                 role: dbRole, // Use 'assistant' instead of 'ai' for database
-                content: msg.text,
+                content: contentWithAttachmentNote,
                 timestamp: msg.timestamp || new Date().toISOString(),
                 user_id: userId
               }])

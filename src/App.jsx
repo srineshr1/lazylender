@@ -399,7 +399,7 @@ function CalendarApp() {
       <>
           {/* Desktop sidebar - hidden on mobile */}
           <div className="flex-shrink-0 hidden md:block">
-            <Sidebar onAddEvent={() => openAdd()} />
+            <Sidebar onAddEvent={() => openAdd()} onImportTimetable={() => setIsFloatingChatOpen(true)} />
           </div>
 
           {/* Mobile sidebar drawer */}
@@ -410,7 +410,7 @@ function CalendarApp() {
               side="left"
               title="Menu"
             >
-              <Sidebar onAddEvent={() => { openAdd(); closePanel(); }} />
+              <Sidebar onAddEvent={() => { openAdd(); closePanel(); }} onImportTimetable={() => { toggleChat(); closePanel(); }} />
             </MobileDrawer>
           )}
 

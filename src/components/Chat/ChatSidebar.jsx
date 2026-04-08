@@ -1,9 +1,11 @@
-import React, { useRef, useEffect, useState, useId } from 'react'
+import React, { useRef, useEffect, useState, useId, useCallback } from 'react'
 import { useChatStore } from '../../store/useChatStore'
 import { useLLM } from './useLLM'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
 const RESIZE_EDGE_THRESHOLD = 6
+const ACCEPTED_FILE_TYPES = 'image/png,image/jpeg,image/jpg,image/webp,application/pdf'
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 function TypingDots() {
   return (
@@ -11,6 +13,30 @@ function TypingDots() {
       <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce" aria-hidden="true" />
       <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce-2" aria-hidden="true" />
       <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce-3" aria-hidden="true" />
+    </div>
+  )
+}
+
+function FileAttachment({ attachment }) {
+  if (attachment.type === 'image') {
+    return (
+      <div className="mt-2 rounded-lg overflow-hidden max-w-[200px]">
+        <img 
+          src={attachment.url} 
+          alt={attachment.name || 'Attached image'} 
+          className="w-full h-auto object-cover"
+        />
+      </div>
+    )
+  }
+  
+  // PDF or other file types
+  return (
+    <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 border border-accent/20">
+      <svg className="w-4 h-4 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+      <span className="text-xs theme-text-primary truncate">{attachment.name || 'File'}</span>
     </div>
   )
 }
@@ -43,6 +69,9 @@ function ChatMessage({ msg }) {
             <div className="text-[13px] leading-relaxed font-sans theme-text-primary break-words">
               {msg.text}
             </div>
+            {msg.attachments?.map((attachment, idx) => (
+              <FileAttachment key={idx} attachment={attachment} />
+            ))}
           </div>
         </div>
       </article>
@@ -77,7 +106,7 @@ function ChatMessage({ msg }) {
 
 export default function ChatSidebar({ onClose }) {
   const { messages, isTyping, isOnline, error, clearError } = useChatStore()
-  const { send } = useLLM()
+  const { send, isInWizard, resetWizard, startTimetableImport } = useLLM()
   const isMobile = useIsMobile()
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -86,8 +115,12 @@ export default function ChatSidebar({ onClose }) {
   const [nearEdge, setNearEdge] = useState(null)
   const [isResizing, setIsResizing] = useState(false)
   const [resizeEdge, setResizeEdge] = useState(null)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [filePreview, setFilePreview] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
   const bottomRef = useRef(null)
   const textareaRef = useRef(null)
+  const fileInputRef = useRef(null)
   const chatRegionId = useId()
   const sidebarRef = useRef(null)
   const startX = useRef(0)
@@ -97,6 +130,80 @@ export default function ChatSidebar({ onClose }) {
   const prevMessageCountRef = useRef(0)
   const prevTypingRef = useRef(false)
   const isInitialMountRef = useRef(true)
+
+  // File validation and preview generation
+  const handleFileSelect = useCallback((file) => {
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ACCEPTED_FILE_TYPES.split(',')
+    if (!validTypes.includes(file.type)) {
+      alert('Please upload an image (PNG, JPG, WebP) or PDF file.')
+      return
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      alert('File size must be less than 10MB.')
+      return
+    }
+
+    setSelectedFile(file)
+
+    // Generate preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (e) => setFilePreview(e.target.result)
+      reader.readAsDataURL(file)
+    } else {
+      setFilePreview(null)
+    }
+  }, [])
+
+  // Clear selected file
+  const clearSelectedFile = useCallback(() => {
+    setSelectedFile(null)
+    setFilePreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }, [])
+
+  // Handle file input change
+  const handleFileInputChange = useCallback((e) => {
+    const file = e.target.files?.[0]
+    if (file) handleFileSelect(file)
+  }, [handleFileSelect])
+
+  // Drag and drop handlers
+  const handleDragEnter = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set to false if leaving the container entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false)
+    }
+  }, [])
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const file = e.dataTransfer.files?.[0]
+    if (file) handleFileSelect(file)
+  }, [handleFileSelect])
 
   const handleMouseMove = (e) => {
     if (isResizing) return
@@ -181,12 +288,26 @@ export default function ChatSidebar({ onClose }) {
 
   const handleSend = async () => {
     const text = input.trim()
-    if (!text || sending) return
+    // Allow sending with file only, or text only, or both
+    if (!text && !selectedFile) return
+    if (sending) return
+
     setInput('')
     if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
     setSending(true)
-    await send(text)
-    setSending(false)
+
+    try {
+      if (selectedFile) {
+        // If file is selected, start timetable import
+        await startTimetableImport(selectedFile)
+        clearSelectedFile()
+      } else {
+        // Normal text message
+        await send(text)
+      }
+    } finally {
+      setSending(false)
+    }
   }
 
   const handleKey = (e) => {
@@ -253,18 +374,37 @@ export default function ChatSidebar({ onClose }) {
             aria-label={`AI assistant status: ${onlineStatus}`}
           />
           <span className="font-display text-[18px] tracking-tight theme-text-primary">AI</span>
+          {isInWizard && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/20 text-accent font-medium">
+              Importing
+            </span>
+          )}
         </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg theme-icon-btn"
-            aria-label="Close chat"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {isInWizard && (
+            <button
+              onClick={() => {
+                resetWizard()
+                clearSelectedFile()
+              }}
+              className="text-[11px] px-2 py-1 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
+              aria-label="Cancel timetable import"
+            >
+              Cancel
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg theme-icon-btn"
+              aria-label="Close chat"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Error Banner */}
@@ -289,12 +429,28 @@ export default function ChatSidebar({ onClose }) {
       {/* Messages */}
       <div 
         id={chatRegionId}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 flex flex-col"
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-2 flex flex-col relative ${isDragging ? 'bg-accent/5' : ''}`}
         role="log"
         aria-label="Chat messages"
         aria-live="polite"
         aria-relevant="additions"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
+        {/* Drag overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 flex items-center justify-center bg-accent/10 border-2 border-dashed border-accent rounded-lg z-10 pointer-events-none">
+            <div className="text-center">
+              <svg className="w-8 h-8 mx-auto mb-2 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p className="text-sm text-accent font-medium">Drop timetable here</p>
+              <p className="text-xs theme-text-secondary mt-1">Image or PDF</p>
+            </div>
+          </div>
+        )}
         {messages.map((m) => <ChatMessage key={m.id} msg={m} />)}
         {isTyping && (
           <div className="py-2">
@@ -320,13 +476,66 @@ export default function ChatSidebar({ onClose }) {
 
       {/* Input - extra bottom padding on mobile for MobileNav and safe area */}
       <div className={`px-4 pt-2 flex-shrink-0 ${isMobile ? 'pb-20' : 'pb-4'}`} style={isMobile ? { paddingBottom: 'max(80px, calc(64px + env(safe-area-inset-bottom)))' } : undefined}>
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_FILE_TYPES}
+          onChange={handleFileInputChange}
+          className="hidden"
+          aria-hidden="true"
+        />
+
+        {/* File preview */}
+        {selectedFile && (
+          <div className="mb-2 p-2 rounded-lg glass-subtle border border-accent/20 flex items-center gap-2">
+            {filePreview ? (
+              <img src={filePreview} alt="Preview" className="w-12 h-12 object-cover rounded" />
+            ) : (
+              <div className="w-12 h-12 rounded bg-accent/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs theme-text-primary truncate">{selectedFile.name}</p>
+              <p className="text-[10px] theme-text-secondary">
+                {(selectedFile.size / 1024).toFixed(1)} KB
+              </p>
+            </div>
+            <button
+              onClick={clearSelectedFile}
+              className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors"
+              aria-label="Remove file"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 border rounded-lg px-3 py-1.5 focus-within:border-accent/50 transition-colors glass-subtle">
+          {/* Attachment button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="hover:text-accent transition-colors flex items-center justify-center flex-shrink-0 theme-text-secondary disabled:opacity-50"
+            disabled={sending || isInWizard}
+            aria-label="Attach timetable image or PDF"
+            title="Upload timetable (image or PDF)"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+          </button>
+
           <label htmlFor="chat-input" className="sr-only">Message to AI assistant</label>
           <textarea
             id="chat-input"
             ref={textareaRef}
             className="flex-1 bg-transparent border-none outline-none text-[13px] theme-text-primary placeholder:text-[color:var(--theme-text-secondary)] resize-none min-h-[20px] max-h-24 leading-relaxed font-sans"
-            placeholder="Ask about your calendar…"
+            placeholder={selectedFile ? "Press send to import timetable…" : "Ask about your calendar…"}
             value={input}
             onChange={handleTextarea}
             onKeyDown={handleKey}
@@ -336,13 +545,15 @@ export default function ChatSidebar({ onClose }) {
           <button
             className="hover:text-accent disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0 text-lg theme-text-secondary"
             onClick={handleSend}
-            disabled={sending || !input.trim()}
-            aria-label={sending ? 'Sending message...' : 'Send message'}
+            disabled={sending || (!input.trim() && !selectedFile)}
+            aria-label={sending ? 'Sending message...' : selectedFile ? 'Import timetable' : 'Send message'}
           >
             <span aria-hidden="true">↑</span>
           </button>
         </div>
-        <p id="chat-input-hint" className="text-[10.5px] text-center mt-1.5 theme-text-secondary">Enter to send · Shift+Enter for new line</p>
+        <p id="chat-input-hint" className="text-[10.5px] text-center mt-1.5 theme-text-secondary">
+          {selectedFile ? 'Send to import timetable' : 'Enter to send · Shift+Enter for new line'}
+        </p>
       </div>
 
       {/* Resize zones - desktop only */}

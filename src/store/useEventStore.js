@@ -127,8 +127,15 @@ export const useEventStore = create((set, get) => ({
       subscribeToEvents: (supabase, userId) => {
         if (!supabase || !isAuthRequired() || !userId) return
 
+        const { realtimeSubscription } = get()
+        if (realtimeSubscription) {
+          realtimeSubscription.unsubscribe()
+        }
+
+        const channelName = `events_changes_${userId}_${Date.now()}`
+
         const subscription = supabase
-          .channel('events_changes')
+          .channel(channelName)
           .on('postgres_changes', {
             event: '*',
             schema: 'public',
