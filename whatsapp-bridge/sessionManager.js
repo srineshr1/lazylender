@@ -229,10 +229,11 @@ async function logoutSession(userId) {
 function getSessionState(userId) {
   const client = sessions.get(userId)
   if (!client) {
-    return { connected: false, info: null }
+    return { connected: false, hasSession: false, info: null }
   }
   return {
-    connected: client.info ? true : false,
+    connected: !!client.info?.pushName,
+    hasSession: true,
     info: client.info || null
   }
 }
@@ -243,8 +244,7 @@ function getSessionState(userId) {
  * @returns {boolean}
  */
 function hasSession(userId) {
-  const client = sessions.get(userId)
-  return client && client.info ? true : false
+  return sessions.has(userId)
 }
 
 /**

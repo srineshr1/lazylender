@@ -20,6 +20,7 @@ export default function TopBar({
   onAddEvent, 
   onWhatsAppSettings, 
   onSettings,
+  onProfile,
   onMenuClick,
   onChatClick,
   isMobile = false
@@ -222,6 +223,14 @@ export default function TopBar({
                   <p className="text-xs theme-text-secondary">Signed in as</p>
                   <p className="text-sm font-medium theme-text-primary truncate">{user.email}</p>
                 </div>
+                <button
+                  onClick={() => { setShowUserMenu(false); onProfile?.() }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 theme-text-primary flex items-center gap-2"
+                  role="menuitem"
+                >
+                  <Icon name="user" className="w-4 h-4" aria-hidden="true" />
+                  Profile
+                </button>
                 <button
                   onClick={handleSignOut}
                   className="w-full text-left px-3 py-2 text-sm hover:bg-black/5 text-red-600 dark:text-red-400 flex items-center gap-2"

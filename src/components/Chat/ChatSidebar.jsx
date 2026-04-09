@@ -25,14 +25,29 @@ function formatTime(ts) {
 }
 
 function FileAttachment({ attachment }) {
-  if (attachment.type === 'image') {
+  const [imgError, setImgError] = useState(false)
+
+  if (attachment.type === 'image' && !imgError) {
     return (
       <div className="mt-2 rounded-lg overflow-hidden max-w-[200px]">
         <img 
           src={attachment.url} 
           alt={attachment.name || 'Attached image'} 
           className="w-full h-auto object-cover"
+          onError={() => setImgError(true)}
         />
+      </div>
+    )
+  }
+
+  if (attachment.type === 'image' && imgError) {
+    return (
+      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 border border-accent/20 max-w-[200px]">
+        <svg className="w-5 h-5 text-accent/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+        </svg>
+        <span className="text-xs theme-text-secondary truncate">{attachment.name || 'Image unavailable'}</span>
       </div>
     )
   }
@@ -49,21 +64,6 @@ function FileAttachment({ attachment }) {
 }
 
 function ChatMessage({ msg }) {
-  if (msg.role === 'system') {
-    return (
-      <div 
-        className="py-3 animate-fadeUp"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="flex justify-center">
-          <div className="px-3.5 py-1.5 rounded-full glass-subtle text-center text-[11px] leading-relaxed theme-text-secondary tracking-[0.02em]">
-            {msg.text}
-          </div>
-        </div>
-      </div>
-    )
-  }
   
   if (msg.role === 'user') {
     const ts = formatTime(msg.timestamp)
@@ -125,11 +125,11 @@ function ChatMessage({ msg }) {
   )
 }
 
-export default function ChatSidebar({ onClose }) {
+export default function ChatSidebar({ onClose, initialMessage }) {
   const { messages, isTyping, isOnline, error, clearError } = useChatStore()
   const { send, isInWizard, resetWizard, startTimetableImport } = useLLM()
   const isMobile = useIsMobile()
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState(initialMessage || '')
   const [sending, setSending] = useState(false)
   const [height, setHeight] = useState(600)
   const [width, setWidth] = useState(320)
@@ -151,6 +151,13 @@ export default function ChatSidebar({ onClose }) {
   const prevMessageCountRef = useRef(0)
   const prevTypingRef = useRef(false)
   const isInitialMountRef = useRef(true)
+
+  // Auto-focus textarea when opened with an initial message
+  useEffect(() => {
+    if (initialMessage) {
+      setTimeout(() => textareaRef.current?.focus(), 100)
+    }
+  }, [])
 
   // File validation and preview generation
   const handleFileSelect = useCallback((file) => {

@@ -1,13 +1,7 @@
 import { create } from 'zustand'
 
-const SYSTEM_MESSAGE = {
-  id: 'm0',
-  role: 'system',
-  text: 'Chat with your calendar. Try: "Add a meeting on Friday at 2pm", "What do I have tomorrow?", or upload a timetable image to import your schedule!'
-}
-
 export const useChatStore = create((set, get) => ({
-      messages: [SYSTEM_MESSAGE],
+      messages: [],
       isTyping: false,
       isOnline: null,
       error: null,
@@ -43,7 +37,7 @@ export const useChatStore = create((set, get) => ({
               text: msg.content,
               timestamp: msg.timestamp
             }))
-            set({ messages: [SYSTEM_MESSAGE, ...formattedMessages] })
+            set({ messages: formattedMessages })
           }
           
           console.log(`[Chat] Loaded ${data?.length || 0} messages from Supabase`)
@@ -174,7 +168,7 @@ export const useChatStore = create((set, get) => ({
         const { supabase, userId } = get()
         
         set({
-          messages: [SYSTEM_MESSAGE]
+          messages: []
         })
 
         if (supabase && userId) {

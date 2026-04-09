@@ -245,10 +245,23 @@ app.get('/users/:userId/status', validateUserParam, (req, res) => {
     const status = getUserStatus(userId)
     const sessionState = sessionManager.getSessionState(userId)
     
+    let sessionStatus = 'DISCONNECTED'
+    if (sessionState.connected) {
+      sessionStatus = 'CONNECTED'
+    } else if (sessionState.hasSession) {
+      if (status.qr) {
+        sessionStatus = 'QR_READY'
+      } else if (status.message === 'Authenticated, loading...') {
+        sessionStatus = 'AUTHENTICATING'
+      } else {
+        sessionStatus = 'CONNECTING'
+      }
+    }
+    
     res.json({
       ...status,
       sessionActive: sessionState.connected,
-      sessionStatus: sessionState.connected ? 'CONNECTED' : 'DISCONNECTED'
+      sessionStatus
     })
   } catch (err) {
     console.error('[Status] Error:', err.message)

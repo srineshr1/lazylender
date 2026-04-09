@@ -629,6 +629,87 @@ select:focus-visible,
 }
 .animate-fadeIn { animation: fadeIn 0.2s ease forwards; }
 
+@keyframes chatOpen {
+  0% {
+    opacity: 0;
+    transform: scale(0.35);
+    border-radius: 48px;
+  }
+  50% {
+    opacity: 1;
+    border-radius: 1.25rem;
+  }
+  75% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    border-radius: 1rem;
+  }
+}
+@keyframes chatClose {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    border-radius: 1rem;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.35);
+    border-radius: 48px;
+  }
+}
+.animate-chatOpen  { animation: chatOpen  0.38s cubic-bezier(0.32, 0.72, 0, 1) forwards; transform-origin: bottom right; }
+.animate-chatClose { animation: chatClose 0.28s cubic-bezier(0.32, 0, 0.67, 0) forwards; transform-origin: bottom right; pointer-events: none; }
+
+@keyframes fabFadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.7); }
+}
+@keyframes fabFadeIn {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-fabFadeOut { animation: fabFadeOut 0.18s ease-in forwards; pointer-events: none; }
+.animate-fabFadeIn  { animation: fabFadeIn  0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* Chat FAB suggestion cycling */
+@keyframes suggestionIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes suggestionOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-8px); }
+}
+.animate-suggestionIn  { animation: suggestionIn  0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-suggestionOut { animation: suggestionOut 0.2s  cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* FAB group entrance */
+@keyframes fabGroupIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes fabSuggestionIn {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-fabGroupIn      { animation: fabGroupIn      0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-fabSuggestionIn { animation: fabSuggestionIn 0.3s  0.15s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes whatsappPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@keyframes whatsappRing {
+  0% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.animate-whatsappPulse { animation: whatsappPulse 2s ease-in-out infinite; }
+.animate-whatsappRing { animation: whatsappRing 2s ease-out infinite; }
+
 .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
 .safe-area-top { padding-top: env(safe-area-inset-top, 0); }
 
