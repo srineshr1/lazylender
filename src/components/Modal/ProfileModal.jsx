@@ -166,7 +166,7 @@ export default function ProfileModal({ isOpen, onClose, onOpenWhatsAppSettings }
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           ref={modalRef}
-          className="w-[calc(100vw-32px)] sm:w-[480px] max-h-[calc(100vh-80px)] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-modalIn glass-panel glass-modal"
+          className="w-full sm:w-[480px] max-h-[calc(100vh-80px)] rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-modalIn glass-panel glass-modal"
         >
           <div className="px-6 py-5 border-b border-[color:var(--theme-border)]/80 flex items-center justify-between">
             <h2 className="text-[18px] font-semibold tracking-tight theme-text-primary">
