@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: kairo-bridge
+    env: docker
+    region: oregon
+    plan: free
+    rootDir: whatsapp-bridge
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_TEXT_MODEL
+        sync: false
+      - key: GROQ_VISION_MODEL
+        sync: false
+      - key: CALENDAR_URL
+        value: https://kairocalender.web.app
+      - key: ALLOWED_ORIGINS
+        value: https://kairocalender.web.app,https://kairocalender.firebaseapp.com,https://kairo.srinesh.in
+      - key: BRIDGE_REQUIRE_AUTH
+        value: "true"
+      - key: BRIDGE_ADMIN_API_KEY
+        sync: false

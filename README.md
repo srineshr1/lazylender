@@ -88,7 +88,7 @@ Kairo uses a **microservices architecture** with three main components:
 │                                                                     │
 │  ┌─────────────┐     ┌──────────────┐     ┌─────────────────────┐  │
 │  │   React     │────▶│   Supabase   │◀────│  WhatsApp Bridge    │  │
-│  │   PWA       │     │   (BaaS)     │     │  (Node.js/Railway)  │  │
+│  │   PWA       │     │   (BaaS)     │     │  (Node.js/Render)  │  │
 │  │             │     │              │     │                     │  │
 │  │  • Calendar │     │  • Auth      │     │  • whatsapp-web.js  │  │
 │  │  • Chat UI  │     │  • Realtime  │     │  • Session Manager  │  │
@@ -114,14 +114,14 @@ Kairo uses a **microservices architecture** with three main components:
 | **State** | Zustand + localStorage persistence | Client-side state management |
 | **Backend** | Supabase (PostgreSQL + Realtime) | Authentication, database, real-time sync |
 | **AI/LLM** | Groq API (Llama 3.3 70B) | Natural language processing, event extraction |
-| **WhatsApp** | Node.js + whatsapp-web.js | Multi-tenant WhatsApp bridge on Railway |
-| **Hosting** | Firebase Hosting + Railway | Frontend (Firebase), Backend (Railway) |
+| **WhatsApp** | Node.js + whatsapp-web.js | Multi-tenant WhatsApp bridge on Render |
+| **Hosting** | Firebase Hosting + Render | Frontend (Firebase), Backend (Render) |
 
 ### Key Technical Decisions
 
 1. **Multi-tenant WhatsApp Bridge**
    - Each user gets isolated session management
-   - Puppeteer runs in headless mode on Railway containers
+   - Puppeteer runs in headless mode on Render containers
    - Sessions persist across deployments via Supabase storage
 
 2. **Groq for LLM Inference**
@@ -156,7 +156,7 @@ kairo/
 └── whatsapp-bridge/         # Separate Node.js service
     ├── sessions/            # Per-user session management
     ├── bridge-server.js     # Express API server
-    └── deploy scripts       # Railway deployment
+    └── deploy scripts       # Render deployment
 ```
 
 ---
@@ -178,7 +178,7 @@ kairo/
 | Service | Platform | URL |
 |---------|----------|-----|
 | Frontend | Firebase Hosting | [kairocalender.web.app](https://kairocalender.web.app) |
-| WhatsApp Bridge | Railway | `kairo-production-d76b.up.railway.app` |
+| WhatsApp Bridge | Render | `kairo-bridge.onrender.com` |
 | Database | Supabase | Managed PostgreSQL |
 | AI/LLM | Groq Cloud | API-based |
 

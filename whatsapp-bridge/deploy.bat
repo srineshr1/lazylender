@@ -1,61 +1,33 @@
 @echo off
-REM WhatsApp Bridge Deployment Script for Railway (Windows)
-REM Since the Railway project is not connected to Git, use `railway up` for manual deployment
+REM WhatsApp Bridge Deployment Guide for Render
+REM Render auto-builds from Git — just push to your repo's branch.
 
 echo.
-echo 🚂 Deploying WhatsApp Bridge to Railway...
+echo 🌐 Kairo Bridge — Deploy to Render
 echo.
-
-REM Check if Railway CLI is installed
-where railway >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo ❌ Railway CLI not found!
-    echo 📦 Install it with: npm install -g @railway/cli
-    echo 🔗 Or visit: https://docs.railway.app/develop/cli
-    exit /b 1
-)
-
-REM Check if logged in
-railway whoami >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo ❌ Not logged in to Railway
-    echo 🔑 Run: railway login
-    exit /b 1
-)
-
-REM Check if linked to a project
-railway status >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo ❌ Not linked to a Railway project
-    echo 🔗 Run: railway link
-    exit /b 1
-)
-
-echo ✅ Railway CLI ready
+echo Render deploys automatically from Git. No CLI needed.
 echo.
-
-REM Show current project info
-echo 📊 Current project:
-railway status
+echo Setup (one-time):
+echo   1. Go to https://dashboard.render.com
+echo   2. Create a new Web Service - connect your GitHub repo
+echo   3. Set Root Directory to: whatsapp-bridge
+echo   4. Build Command:      (auto-detected — Dockerfile)
+echo   5. Start Command:      (auto-detected — Dockerfile CMD)
+echo   6. Health Check Path:  /health
 echo.
-
-REM Confirm deployment
-set /p CONFIRM="🤔 Deploy to Railway now? (y/n) "
-if /i not "%CONFIRM%"=="y" (
-    echo ❌ Deployment cancelled
-    exit /b 0
-)
-
-REM Deploy using railway up (manual upload)
-REM IMPORTANT: Use --no-gitignore because parent .gitignore excludes sessions/ directory
-REM but we need sessions/manager.js (source code) to be uploaded
+echo You can also use render.yaml (Blueprint) at the repo root
+echo for fully automated infra setup.
 echo.
-echo 📤 Uploading and deploying...
-railway up --no-gitignore
-
+echo Set these env vars in the Render dashboard:
+echo   NODE_ENV=production
+echo   GROQ_API_KEY=^<your-groq-key^>
+echo   CALENDAR_URL=https://kairocalender.web.app
+echo   ALLOWED_ORIGINS=https://kairocalender.web.app,https://kairocalender.firebaseapp.com
+echo   BRIDGE_REQUIRE_AUTH=true
+echo   BRIDGE_ADMIN_API_KEY=^<long-random-secret^>
 echo.
-echo ✅ Deployment complete!
+echo Deploy:
+echo   git push origin main
 echo.
-echo 🔍 Check logs with: railway logs
-echo 🌐 Open dashboard: railway open
-echo ⚙️  Set environment variables in Railway dashboard if needed
+echo Your bridge URL will be: https://kairo-bridge.onrender.com
+echo Update frontend .env: VITE_BRIDGE_URL=https://kairo-bridge.onrender.com

@@ -1,54 +1,40 @@
 # WhatsApp Bridge Deployment Guide
 
-This guide covers deploying the WhatsApp Bridge server to Railway using manual deployment (`railway up`).
+This guide covers deploying the WhatsApp Bridge server to Render using Git-connected auto-deploy.
 
 ## Prerequisites
 
-1. **Railway Account** - Sign up at [railway.app](https://railway.app)
-2. **Railway CLI** - Install globally:
-   ```bash
-   npm install -g @railway/cli
-   ```
-3. **Railway Project** - Create a new project in Railway dashboard
+1. **Render Account** - Sign up at [render.com](https://render.com)
+2. **GitHub Repository** - Your Kairo project must be pushed to GitHub
+3. **Docker Hub Access** (optional) - Only if you need private image caching
 
-## Initial Setup
+## Setup (One-Time)
 
-### 1. Install Railway CLI
+### Option A: Blueprint Deploy (render.yaml — Recommended)
 
-```bash
-npm install -g @railway/cli
-```
+The root `render.yaml` defines the entire service. After pushing to GitHub:
 
-Verify installation:
-```bash
-railway --version
-```
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click **New** → **Blueprint**
+3. Connect your GitHub repo
+4. Render auto-detects `render.yaml` and creates the service
 
-### 2. Login to Railway
+### Option B: Manual Setup in Dashboard
 
-```bash
-railway login
-```
-
-This will open your browser to authenticate.
-
-### 3. Link to Your Railway Project
-
-Navigate to the bridge directory:
-```bash
-cd whatsapp-bridge
-```
-
-Link to your Railway project:
-```bash
-railway link
-```
-
-Select your project from the list, or create a new one.
+1. Go to [Render Dashboard](https://dashboard.render.com)
+2. Click **New** → **Web Service**
+3. Connect your GitHub repo
+4. Configure:
+   - **Name:** `kairo-bridge`
+   - **Root Directory:** `whatsapp-bridge`
+   - **Environment:** `Docker`
+   - **Health Check Path:** `/health`
+5. Add environment variables (see below)
+6. Click **Create Web Service**
 
 ## Environment Variables
 
-Set these in the **Railway Dashboard** → **Variables** tab:
+Set these in the **Render Dashboard** → **Environment** tab:
 
 ### Required Variables
 
@@ -69,64 +55,43 @@ ALLOWED_ORIGINS=https://kairocalender.web.app,https://kairocalender.firebaseapp.
 BRIDGE_REQUIRE_AUTH=true
 BRIDGE_ADMIN_API_KEY=generate_a_long_random_secure_key_here
 
-# Railway sets PORT automatically - DO NOT set it manually
+# Render sets PORT automatically - DO NOT set PORT or BRIDGE_PORT
 ```
 
 ### Important Notes
 
-- **DO NOT set PORT** - Railway automatically injects the correct port
-- **DO NOT commit .env files** - Set variables in Railway dashboard
+- **DO NOT set PORT or BRIDGE_PORT** - Render automatically injects the correct port
+- **DO NOT commit .env files** - Set variables in Render dashboard
 - **Keep GROQ_API_KEY secure** - Never expose in frontend code
 
 ## Deployment
 
-### Method 1: Using Deployment Script (Recommended)
-
-**Windows:**
-```bash
-deploy.bat
-```
-
-**Linux/Mac/Git Bash:**
-```bash
-bash deploy.sh
-```
-
-The script will:
-1. Check Railway CLI is installed
-2. Verify you're logged in
-3. Confirm you're linked to a project
-4. Upload and deploy your code
-
-### Method 2: Manual Deployment
+Render auto-deploys on every push to the connected branch:
 
 ```bash
-cd whatsapp-bridge
-railway up
+git push origin main
 ```
 
-This uploads your local code directly to Railway (bypasses Git).
+That's it. No CLI, no manual uploads. Render watches your branch and builds/deploys automatically.
 
 ## Post-Deployment
 
-### 1. Get Your Railway URL
+### 1. Get Your Render URL
 
-```bash
-railway status
+Your service URL will be:
+```
+https://kairo-bridge.onrender.com
 ```
 
-Or check the Railway dashboard. It will be something like:
-```
-https://your-project-name.up.railway.app
-```
+Or check the Render dashboard for the exact URL.
 
 ### 2. Update Frontend Configuration
 
 Update your **frontend `.env`** file:
 
 ```env
-# Set this to your Railway URL
-VITE_BRIDGE_URL=https://your-project-name.up.railway.app
+# Set this to your Render URL
+VITE_BRIDGE_URL=https://kairo-bridge.onrender.com
 VITE_USE_BRIDGE_PROXY=true
 ```
 
@@ -135,7 +100,7 @@ VITE_USE_BRIDGE_PROXY=true
 Check if the bridge is running:
 
 ```bash
-curl https://your-project-name.up.railway.app/health
+curl https://kairo-bridge.onrender.com/health
 ```
 
 Expected response:
@@ -144,7 +109,7 @@ Expected response:
   "status": "ok",
   "message": "Multi-tenant WhatsApp Bridge is running",
   "activeSessions": 0,
-  "timestamp": "2024-01-01T00:00:00.000Z"
+  "timestamp": "2025-01-01T00:00:00.000Z"
 }
 ```
 
@@ -152,26 +117,19 @@ Expected response:
 
 ### View Logs
 
-```bash
-railway logs
-```
+Logs are available in the Render dashboard under the **Logs** tab. You can also stream them via:
 
-Follow logs in real-time:
 ```bash
-railway logs --follow
+# Install Render CLI (optional — for log streaming only)
+npm install -g @render/cli
+
+# Stream logs
+render logs
 ```
 
 ### Check Status
 
-```bash
-railway status
-```
-
-### Open Dashboard
-
-```bash
-railway open
-```
+Status and metrics are visible in the Render dashboard.
 
 ## Troubleshooting
 
@@ -180,51 +138,33 @@ railway open
 **Symptom:** Frontend shows "Not allowed by CORS" or "CORS error"
 
 **Solution:**
-1. Check `ALLOWED_ORIGINS` in Railway dashboard includes your frontend URL
+1. Check `ALLOWED_ORIGINS` in Render dashboard includes your frontend URL
 2. Check `CALENDAR_URL` is set correctly
-3. Redeploy after changing variables: `railway up`
-4. Check logs for CORS messages: `railway logs`
+3. Render auto-allows `*.onrender.com` and `*.ngrok-free.dev` domains
+4. Push a new commit to trigger redeploy, or use **Manual Deploy** → **Deploy latest commit** in dashboard
 
 ### Bridge Not Connecting
 
 **Symptom:** Frontend shows "Bridge server unreachable"
 
 **Solution:**
-1. Verify Railway service is running: `railway status`
-2. Check Railway URL is correct in frontend `.env`
-3. Test health endpoint: `curl https://your-project.up.railway.app/health`
-4. Check Railway logs: `railway logs`
+1. Verify the service is running in Render dashboard
+2. Check the service URL matches your `VITE_BRIDGE_URL`
+3. Wait 30-60 seconds — free-tier Render services spin down after inactivity and take a moment to wake up
+4. Test health endpoint: `curl https://kairo-bridge.onrender.com/health`
 
-### API Key Errors
+### Cold Starts on Free Tier
 
-**Symptom:** "Invalid Groq API key" or authentication errors
-
-**Solution:**
-1. Verify `GROQ_API_KEY` is set in Railway dashboard
-2. Test the key at [console.groq.com](https://console.groq.com)
-3. Redeploy: `railway up`
+On Render's free tier, web services **spin down after 15 minutes of inactivity**. The first request after a spin-down will take 30-60 seconds to respond (Chromium startup). Use a health check ping service like [UptimeRobot](https://uptimerobot.com) to keep it warm.
 
 ### Build Failures
 
 **Symptom:** Deployment fails during build
 
 **Solution:**
-1. Check Dockerfile exists in `whatsapp-bridge/`
-2. Verify `railway.toml` is configured correctly
-3. Check logs for specific error: `railway logs`
-4. Ensure all dependencies are in `package.json`
-
-## Quick Reference Commands
-
-| Command | Description |
-|---------|-------------|
-| `railway login` | Authenticate with Railway |
-| `railway link` | Link to a Railway project |
-| `railway up` | Deploy current directory |
-| `railway logs` | View deployment logs |
-| `railway status` | Check project status |
-| `railway open` | Open Railway dashboard |
-| `railway variables` | Manage environment variables |
+1. Check the Dockerfile exists in `whatsapp-bridge/`
+2. Verify `render.yaml` at repo root has `rootDir: whatsapp-bridge`
+3. Check Render logs for specific build errors
 
 ## Local Testing Before Deployment
 
@@ -255,7 +195,7 @@ VITE_BRIDGE_URL=https://your-subdomain.ngrok-free.dev
 
 Before deploying to production:
 
-- [ ] Set `NODE_ENV=production` in Railway
+- [ ] Set `NODE_ENV=production` in Render
 - [ ] Set secure `BRIDGE_ADMIN_API_KEY`
 - [ ] Set `BRIDGE_REQUIRE_AUTH=true`
 - [ ] Add all frontend URLs to `ALLOWED_ORIGINS`
@@ -265,10 +205,11 @@ Before deploying to production:
 - [ ] Set `VITE_USE_BRIDGE_PROXY=true` in frontend
 - [ ] Test health endpoint
 - [ ] Monitor logs for errors
+- [ ] Consider upgrading from Free to Starter plan to avoid cold starts
 
 ## Security Notes
 
-1. **Never commit `.env` files** - Use Railway dashboard for variables
+1. **Never commit `.env` files** - Use Render dashboard for variables
 2. **Use bridge proxy in production** - Never expose GROQ_API_KEY in frontend
 3. **Regenerate BRIDGE_ADMIN_API_KEY** - Use a secure random key
 4. **Enable authentication** - Set `BRIDGE_REQUIRE_AUTH=true`
@@ -276,6 +217,6 @@ Before deploying to production:
 
 ## Need Help?
 
-- Railway Docs: https://docs.railway.app
+- Render Docs: https://docs.render.com
 - Kairo Issues: https://github.com/your-repo/kairo/issues
-- Railway Discord: https://discord.gg/railway
+- Render Status: https://status.render.com

@@ -29,17 +29,18 @@ Multi-tenant WhatsApp bridge server for Kairo calendar app. Handles WhatsApp mes
    curl http://localhost:3001/health
    ```
 
-### Production Deployment (Railway)
+### Production Deployment (Render)
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed Railway deployment instructions.
+Render auto-deploys on every `git push` to the connected branch. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
 
-**Quick deploy:**
+**Quick setup:**
 ```bash
-# Windows
-deploy.bat
+# One-time: create Web Service on https://dashboard.render.com
+# Point it to your GitHub repo, rootDir: whatsapp-bridge
+# Or use render.yaml (Blueprint) at the repo root
 
-# Linux/Mac/Git Bash
-bash deploy.sh
+# Then just push:
+git push origin main
 ```
 
 ## Project Structure
@@ -59,18 +60,17 @@ whatsapp-bridge/
 ├── analyzer.js            # AI-powered content analysis
 ├── extractor.js           # Event extraction utilities
 ├── calendarPush.js        # Event queue management
-├── deploy.sh              # Railway deployment script (Linux/Mac)
-├── deploy.bat             # Railway deployment script (Windows)
+├── deploy.sh              # Deploy info script (Linux/Mac)
+├── deploy.bat             # Deploy info script (Windows)
 ├── DEPLOYMENT.md          # Detailed deployment guide
 ├── TROUBLESHOOTING.md     # CORS & connection fixes
 ├── Dockerfile             # Production container config
-├── railway.toml           # Railway deployment config
 └── package.json           # Dependencies & scripts
 ```
 
 ## Environment Variables
 
-Required variables (set in Railway dashboard for production):
+Required variables (set in Render dashboard for production):
 
 ```env
 # Required
@@ -81,7 +81,7 @@ ALLOWED_ORIGINS=https://kairocalender.web.app,https://kairo.srinesh.in
 # Optional
 GROQ_TEXT_MODEL=llama-3.1-8b-instant
 GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-BRIDGE_PORT=3001  # Don't set in Railway (auto-injected)
+BRIDGE_PORT=3001  # Don't set in production (Render auto-injects PORT)
 BRIDGE_REQUIRE_AUTH=true
 BRIDGE_ADMIN_API_KEY=your_secure_admin_key
 ```
@@ -117,7 +117,7 @@ The bridge automatically allows:
 - `CALENDAR_URL` environment variable
 - All `localhost` ports (5173-5177) for development
 - All `.ngrok-free.dev` and `.ngrok.io` domains
-- All `.railway.app` and `.up.railway.app` domains
+- All `.onrender.com`, `.railway.app`, and `.up.railway.app` domains
 
 For CORS issues, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
 
@@ -136,68 +136,18 @@ For CORS issues, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
 
 3. **For local dev:** Leave `VITE_BRIDGE_URL` empty in frontend `.env`
 
-4. **For production:** Set `VITE_BRIDGE_URL` to Railway URL
+4. **For production:** Set `VITE_BRIDGE_URL` to your Render URL
 
 See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for detailed fixes.
 
-### GROQ_API_KEY not working
+### Cold starts (free tier)
 
-1. Verify key at [console.groq.com](https://console.groq.com)
-2. Check key is set correctly in Railway dashboard (not in `.env` file)
-3. Redeploy: `railway up`
-
-### Railway deployment fails
-
-1. Check Railway logs: `railway logs`
-2. Verify environment variables in Railway dashboard
-3. Ensure Railway CLI is up to date: `npm update -g @railway/cli`
+On Render's free plan, services sleep after 15 min of inactivity. The first request wakes it up (30-60s delay). Upgrade to Starter plan or use a ping service to keep it awake.
 
 ## Scripts
 
 - `npm start` - Start production server
 - `npm run dev` - Start with auto-reload (Node 18+)
-- `npm run start:legacy` - Start legacy WhatsApp client (deprecated)
-
-## Deployment
-
-### Railway (Recommended)
-
-**Manual deployment (no Git connection):**
-
-```bash
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Login
-railway login
-
-# Link to project
-railway link
-
-# Deploy
-railway up
-```
-
-Or use the deployment scripts:
-- Windows: `deploy.bat`
-- Linux/Mac: `bash deploy.sh`
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete guide.
-
-### Using ngrok for Testing
-
-```bash
-# Start bridge locally
-npm start
-
-# In another terminal, expose with ngrok
-ngrok http 3001
-```
-
-Update frontend `.env`:
-```env
-VITE_BRIDGE_URL=https://your-subdomain.ngrok-free.dev
-```
 
 ## Security Notes
 
@@ -209,12 +159,12 @@ VITE_BRIDGE_URL=https://your-subdomain.ngrok-free.dev
 
 ## Documentation
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete Railway deployment guide
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete Render deployment guide
 - [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Fix CORS & connection issues
 - [.env.example](./.env.example) - Environment variable reference
 
 ## Support
 
-- Railway docs: https://docs.railway.app
+- Render docs: https://docs.render.com
 - Groq docs: https://console.groq.com/docs
 - Report issues: https://github.com/your-repo/kairo/issues

@@ -1,13 +1,41 @@
-*.tar
-*.tar.gz
+# Dependencies (installed during build)
 node_modules/
-.env
-dist/
-.cache/
+
+# WhatsApp session data (generated at runtime)
 .wwebjs_auth/
 .wwebjs_cache/
-sessions/user_*/
-sessions/*.json
-# IMPORTANT: Keep sessions/manager.js - it's required code
-!sessions/manager.js
+
+# Environment files (use Render dashboard)
+.env
+.env.local
+.env.*.local
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+*.test.js
+__tests__/
+
+# Config files (set in Render dashboard)
+config/api-keys.json
+railway.toml
+.railwayignore

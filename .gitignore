@@ -103,9 +103,8 @@ pnpm-lock.yaml
 yarn.lock
 npm-shrinkwrap.json
 
-# Deployment configs (keep for reference only if needed)
+# Deployment configs
 whatsapp-bridge/.railwayignore
-whatsapp-bridge/.dockerignore
 
 # Debug files
 *.mjs

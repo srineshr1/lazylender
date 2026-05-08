@@ -21,7 +21,7 @@ const { processIncomingMessage } = require('./whatsappProcessor')
 
 const app = express()
 
-// Trust Railway's reverse proxy so rate limiting uses real client IPs
+// Trust Render's reverse proxy so rate limiting uses real client IPs
 app.set('trust proxy', 1)
 
 const PORT = process.env.PORT || process.env.BRIDGE_PORT || 3001
@@ -86,7 +86,13 @@ const corsOptions = {
         return true
       }
       
-      // Allow Railway preview deployments
+      // Allow Render deployments
+      if (origin.includes('.onrender.com')) {
+        console.log('[CORS] Allowing Render origin:', origin)
+        return true
+      }
+
+      // Allow Railway preview deployments (legacy)
       if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
         console.log('[CORS] Allowing Railway origin:', origin)
         return true

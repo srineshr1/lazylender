@@ -1,0 +1,474 @@
+{
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\DEPLOY_BRIDGE_SCHEMA.sql": {
+    "mtime": 1775388555.2117164,
+    "hash": "64e23ea712dab2addeca75dcece9790b"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\postcss.config.js": {
+    "mtime": 1775388555.2167177,
+    "hash": "ef3ba2a81ba19f8ea5ddf625521e96f0"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\tailwind.config.js": {
+    "mtime": 1775388555.251716,
+    "hash": "ce58e558f7546d08448d0d50baa76b01"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\vite.config.js": {
+    "mtime": 1776057759.0269513,
+    "hash": "e35c14299f37862bd211c484567211fb"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\vitest.config.js": {
+    "mtime": 1775388555.253716,
+    "hash": "01525dfe456ad0c73ec402cb118e3a96"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\public\\sw.js": {
+    "mtime": 1775388555.2187164,
+    "hash": "92ed07e885a82333d49f68fe08996602"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\App.jsx": {
+    "mtime": 1775754313.2942526,
+    "hash": "4ab43592493afbbd78c1817a190c6957"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\main.jsx": {
+    "mtime": 1775388555.2457168,
+    "hash": "9cd7afa895b06fed0a91d8732886b8a9"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\setupTests.js": {
+    "mtime": 1775664986.363019,
+    "hash": "341ae1430ccd0da789578b2b25e83b95"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\api\\groqClient.js": {
+    "mtime": 1775670287.8499348,
+    "hash": "494bf0a1e473a3f38a9454a7dda462be"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\api\\whatsappClient.js": {
+    "mtime": 1775388555.2217176,
+    "hash": "48c9b7c8a3da9fe09f3fa1b44de77c11"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\ErrorBoundary.jsx": {
+    "mtime": 1775388555.226717,
+    "hash": "8731731a5b67976cbc2a69369ed94c0c"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Icons.jsx": {
+    "mtime": 1775388555.226717,
+    "hash": "85353eb039a7c703177a9e1b077bbaf6"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\LoadingSpinner.jsx": {
+    "mtime": 1775388555.226717,
+    "hash": "71bff5d35727e6c2d0083e9a14b9cfa5"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\MobileDrawer.jsx": {
+    "mtime": 1775388555.2277162,
+    "hash": "8129379feb266db51eadbcdd77dfcdb8"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\MobileNav.jsx": {
+    "mtime": 1775388555.2277162,
+    "hash": "80bbffc1dba0b241ca0e7a7e4830db52"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\OfflineIndicator.jsx": {
+    "mtime": 1775388555.2327175,
+    "hash": "153208a4b86699d989d1ae70a87f4b42"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\ProtectedRoute.jsx": {
+    "mtime": 1775388555.233716,
+    "hash": "34e51402649b291c771363f772e3717b"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\PWAInstallPrompt.jsx": {
+    "mtime": 1775388555.233716,
+    "hash": "d7a67520b1c02bab74ca56189d478610"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\SupabaseTest.jsx": {
+    "mtime": 1775388555.235718,
+    "hash": "fdc7c5dab6854593bbfa28f8cfb2c864"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\ToastContainer.jsx": {
+    "mtime": 1775388555.235718,
+    "hash": "8c0c2088bfeeae28a192ef3448dd4670"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\WhatsAppToast.jsx": {
+    "mtime": 1775388555.2367163,
+    "hash": "b4413bd790fac20e78a30c27acf1bba1"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Calendar\\DayColumn.jsx": {
+    "mtime": 1775388555.2227159,
+    "hash": "8dfc2db516d69325aa4a404cffbc9f65"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Calendar\\DayPreviewPopup.jsx": {
+    "mtime": 1775388555.2227159,
+    "hash": "3e75211ae262b77005fb9a35fbc9e4dc"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Calendar\\DayView.jsx": {
+    "mtime": 1775388555.2237167,
+    "hash": "fb016fbef5dfc71fd4e71e269ee39452"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Calendar\\EventBlock.jsx": {
+    "mtime": 1775388555.2237167,
+    "hash": "9101a8a45dc3ac3583c62f846d37da78"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Calendar\\MonthView.jsx": {
+    "mtime": 1775388555.2237167,
+    "hash": "08873fd11b2848ec600681df4c94a80b"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Calendar\\TopBar.jsx": {
+    "mtime": 1775751124.8626215,
+    "hash": "cd91060c84355c8f2d7a6b36acbb4870"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Calendar\\WeekView.jsx": {
+    "mtime": 1775388555.224717,
+    "hash": "b59cc87a1eb8018abcc762a82b2d69ab"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Chat\\ChatFab.jsx": {
+    "mtime": 1775754282.2542741,
+    "hash": "fb623c4185a591e537c6055ba420b4c1"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Chat\\ChatSidebar.jsx": {
+    "mtime": 1775754118.584131,
+    "hash": "64ea8cf064d52f37560337ce8b295872"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Chat\\timetablePrompts.js": {
+    "mtime": 1775664362.8630078,
+    "hash": "21ff2d1832b027f3a5ee56bca164369e"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Chat\\useLLM.js": {
+    "mtime": 1775724942.3335378,
+    "hash": "84b9775f1ef741986f87d5a1337ad179"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\EventModal.jsx": {
+    "mtime": 1775388555.2287169,
+    "hash": "679d4dc3950c59b4481ae7e061ca20ac"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\ProfileModal.jsx": {
+    "mtime": 1776056007.955017,
+    "hash": "d2d56046294fdb36561cba1cd2a38106"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\SettingsModal.jsx": {
+    "mtime": 1775388555.2287169,
+    "hash": "4166c3b09ab640ee790255042197d689"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\tabs\\AboutTab.jsx": {
+    "mtime": 1775388555.2297168,
+    "hash": "0655ef46ab897245220a68e99274ca80"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\tabs\\AppearanceTab.jsx": {
+    "mtime": 1775388555.230718,
+    "hash": "3b3b191b46980bad6e92f37bc5e323b6"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\tabs\\CalendarTab.jsx": {
+    "mtime": 1775388555.230718,
+    "hash": "2cdb571864a741c37b9dc12b0e58771e"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\tabs\\GeneralTab.jsx": {
+    "mtime": 1775388555.230718,
+    "hash": "cca50d66bb55eefd3d674de442c0c416"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\tabs\\NotificationsTab.jsx": {
+    "mtime": 1775388555.231716,
+    "hash": "aa4a8ee901200637fbb3f83bba0d60b0"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\tabs\\WhatsAppTab.jsx": {
+    "mtime": 1775388555.231716,
+    "hash": "f444cc045bfd0f87028ddf26ad2bbf2a"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Modal\\__tests__\\EventModal.test.jsx": {
+    "mtime": 1775388555.2297168,
+    "hash": "1c7df588b80de2fd97ceec14d0bf4bde"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Notifications\\NotificationItem.jsx": {
+    "mtime": 1775388555.231716,
+    "hash": "2a4152e35952b6979eb64a282fa442ac"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Notifications\\NotificationPanel.jsx": {
+    "mtime": 1775388555.2327175,
+    "hash": "a02e28a061d955e660096065a0270e74"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Sidebar\\MiniCalendar.jsx": {
+    "mtime": 1775388555.233716,
+    "hash": "c965f004dd390c8a94ae8b959a818acc"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Sidebar\\Sidebar.jsx": {
+    "mtime": 1775664928.7146928,
+    "hash": "04f7b6d2b3a4038fd3e3d92cb8170ebf"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\Sidebar\\TaskList.jsx": {
+    "mtime": 1775388555.2347157,
+    "hash": "d8de85a9a48094f73f07cfc55abf4730"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\WhatsApp\\WhatsAppPopup.jsx": {
+    "mtime": 1775761756.8927495,
+    "hash": "273ef28c1900f260d801c0d81890446d"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\components\\WhatsApp\\WhatsAppSettings.jsx": {
+    "mtime": 1775388555.2367163,
+    "hash": "4eed00592e95aefb30305820e922b3d6"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\contexts\\AuthContext.jsx": {
+    "mtime": 1775388555.2377162,
+    "hash": "befc505f0f9627d211a05456e963dab4"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useAsync.js": {
+    "mtime": 1775388555.2377162,
+    "hash": "5f94138190f2d5d44ec52f33b370afa4"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useChatAnimation.js": {
+    "mtime": 1775754348.7975893,
+    "hash": "16f2b5e6f8256d435c4b9f008e84711a"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useDebounce.js": {
+    "mtime": 1775388555.2387161,
+    "hash": "66c5b3ba24c5532dbaba324946f3a090"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useLocalStorage.js": {
+    "mtime": 1775388555.2387161,
+    "hash": "ac15d27f03acde47ec9282d4d92d7e27"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useMediaQuery.js": {
+    "mtime": 1775388555.239717,
+    "hash": "336939cc14f2e840ac8311fdebb2fe85"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useMobileLayout.js": {
+    "mtime": 1775388555.239717,
+    "hash": "e3027d1d0ace25568a349c61c0c68863"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useNotificationTriggers.js": {
+    "mtime": 1775388555.239717,
+    "hash": "8de1697cdf5fe7fc4a14031f8d688cec"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\usePWA.js": {
+    "mtime": 1775388555.240717,
+    "hash": "6b7cb56f62b510c5da615a9458587fbb"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useThemeColors.js": {
+    "mtime": 1775388555.240717,
+    "hash": "8fd24a212a5f9072f5271517df5998a0"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useWhatsAppBridgeStatus.js": {
+    "mtime": 1775388555.240717,
+    "hash": "7fa6d24d937825fbb711e8d4b51cf5f5"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useWhatsAppSync.js": {
+    "mtime": 1776057735.7108908,
+    "hash": "2541501ab65b1c510b242928dd5da9cf"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\hooks\\useWhatsAppWebSocket.js": {
+    "mtime": 1776057678.6897378,
+    "hash": "a979f7b8d1ae169873d279ad8c4ac12c"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\accessibility.js": {
+    "mtime": 1775388555.242717,
+    "hash": "921fa75e8a5913d8688f1890ab8906c5"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\constants.ts": {
+    "mtime": 1775388555.242717,
+    "hash": "5bd61becb8d626149a8408e3bea618f6"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\dateUtils.ts": {
+    "mtime": 1775388555.2437162,
+    "hash": "c2a46137f75c7ed0d465dc387d031402"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\envConfig.js": {
+    "mtime": 1775388555.2437162,
+    "hash": "873bb305220e19143f0c9716f77e6c80"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\holidayApi.js": {
+    "mtime": 1775664306.2549775,
+    "hash": "ea43ff2593a51325fda09d4800624b4c"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\performanceDetection.js": {
+    "mtime": 1775388555.2447171,
+    "hash": "385b0ee5235b65af1e0621559810fde6"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\supabase.js": {
+    "mtime": 1775388555.2447171,
+    "hash": "5ed82d85bd83e0a367a43b6ca754d4cc"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\supabaseQueries.js": {
+    "mtime": 1775388555.2447171,
+    "hash": "68e9e13d1b5baee83c058da3fd021319"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\lib\\validation.js": {
+    "mtime": 1775388555.2457168,
+    "hash": "9fa1125ddfe37a240c6013a67e10331d"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\pages\\AuthCallback.jsx": {
+    "mtime": 1775388555.2467165,
+    "hash": "868161677766a3b6a24294222ccea9cf"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\pages\\ForgotPassword.jsx": {
+    "mtime": 1775388555.2467165,
+    "hash": "86d31614c6ce2e59d0d197575213ed55"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\pages\\Login.jsx": {
+    "mtime": 1775388555.2467165,
+    "hash": "031074294a32ed80bd3dd46e4b440a32"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\pages\\Signup.jsx": {
+    "mtime": 1775388555.247716,
+    "hash": "08d975dd966f8bff45601733e6bb3b4e"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\store\\useChatStore.js": {
+    "mtime": 1775752130.552888,
+    "hash": "fe60dfdae40444c137b126eae8e664d4"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\store\\useDarkStore.js": {
+    "mtime": 1775388555.2487156,
+    "hash": "d36517983c944bbd266950d97c8bff26"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\store\\useEventStore.js": {
+    "mtime": 1775667493.9354937,
+    "hash": "8078b560a4d9b34695e8c85fe53e0090"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\store\\useNotificationStore.js": {
+    "mtime": 1775388555.249717,
+    "hash": "f24bbab3202c4d40c041c6aa4fe8d533"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\store\\useSettingsStore.js": {
+    "mtime": 1775745974.13018,
+    "hash": "347328ad80bb4ac9ac7fa997ee31d8cb"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\store\\useToastStore.js": {
+    "mtime": 1775388555.2507167,
+    "hash": "f3fd0cd325a15f7df9f4d1254e646763"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\store\\useWhatsAppSettings.js": {
+    "mtime": 1775388555.2507167,
+    "hash": "3c068fcf48ae903a823457358356b181"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\__tests__\\App.integration.test.jsx": {
+    "mtime": 1775388555.2197165,
+    "hash": "f658485c3f87ebb9c3000edd8bee82e4"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\__tests__\\dateUtils.test.js": {
+    "mtime": 1775388555.2207167,
+    "hash": "f047f20c158260e35c99c8e095a12c3c"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\__tests__\\useEventStore.test.js": {
+    "mtime": 1775388555.2207167,
+    "hash": "46e780789d0f392f1deab287be94939d"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\src\\__tests__\\validation.test.js": {
+    "mtime": 1775388555.2207167,
+    "hash": "bfe37b29f7d4de2b3349aa015d89692b"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\supabase\\schema.sql": {
+    "mtime": 1775388555.251716,
+    "hash": "6ed5d94189cc56874858e1af27b5566c"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\analyzer.js": {
+    "mtime": 1775388555.2577171,
+    "hash": "d704762a99f6734f7a9e4ed27e689ea7"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\bridge-server.js": {
+    "mtime": 1776057622.3897948,
+    "hash": "21c18c67e9e75d8f2a3a7e8c81d250eb"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\calendarPush.js": {
+    "mtime": 1775388555.258723,
+    "hash": "9b91c199ae72fb4118d9d2b4693beb2b"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\config.js": {
+    "mtime": 1775388555.259723,
+    "hash": "b44cd61fd5f97c61d86d95e58a3fc142"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\extractor.js": {
+    "mtime": 1775388555.2607226,
+    "hash": "d0b4cb8c221c676243ab71651d037da3"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\sessionManager.js": {
+    "mtime": 1776057834.1104233,
+    "hash": "577b260ac90760cd43d83c329b557672"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\whatsappProcessor.js": {
+    "mtime": 1776057645.1953456,
+    "hash": "cdaf0642376c7a63f557d975b33222f7"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\middleware\\auth.js": {
+    "mtime": 1775388555.2617223,
+    "hash": "14c33b42893c1c1ef5105174b981ca4f"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\middleware\\bridgeAuth.js": {
+    "mtime": 1775388555.2617223,
+    "hash": "acbdf145f0d549ccf5af5adbd3f4a2d0"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\sessions\\manager.js": {
+    "mtime": 1774974998.1200366,
+    "hash": "117ed6f7c6c6eb7dc3bedfa63b76c7a4"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\utils\\userData.js": {
+    "mtime": 1775388555.264722,
+    "hash": "6457351e5cdff4ed77283ae55a20dd75"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\__tests__\\extractor.test.js": {
+    "mtime": 1775388555.2577171,
+    "hash": "588fe4ba71bcb8dd4087b98a07ce4426"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\AGENTS.md": {
+    "mtime": 1778228501.1309035,
+    "hash": "73d382c1c8c319d759991dd5f94f70c6"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\DOCS.md": {
+    "mtime": 1775388555.2117164,
+    "hash": "eaa4625ae814a40903045e91d683bfbc"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\GOOGLE_OAUTH_SETUP.md": {
+    "mtime": 1775388555.2127173,
+    "hash": "10fb99bdf52720b2ec6aa09a4cc74192"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\index.html": {
+    "mtime": 1775388555.214717,
+    "hash": "9c873e3a2c2fa39454158dd377526c1f"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\README.md": {
+    "mtime": 1775388555.2127173,
+    "hash": "8e5179a3efcbf116049c2827dafc8dfc"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\SETUP.md": {
+    "mtime": 1775388555.2137165,
+    "hash": "9d18a10be36381334167fa507befb9e1"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\DEPLOYMENT.md": {
+    "mtime": 1775388555.2557168,
+    "hash": "084b76304e36f8407dea2f038d7edd8f"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\README.md": {
+    "mtime": 1775388555.256716,
+    "hash": "37a037ac803f2d423924579c4d9eed75"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\TESTING-SUMMARY.md": {
+    "mtime": 1775388555.256716,
+    "hash": "5d32da9407d566745e76e61a54ded546"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\whatsapp-bridge\\TROUBLESHOOTING.md": {
+    "mtime": 1775388555.256716,
+    "hash": "fceb03f1e18cfe471042fa0b62b22f2c"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\app-error.png": {
+    "mtime": 1775377199.5740302,
+    "hash": "652f2bc5085efb5fef7675f7ac998285"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\kairo-test-final.png": {
+    "mtime": 1775380143.6565669,
+    "hash": "63fcff2028c154c96879fda1d4cfe3b9"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\time-validation-error.png": {
+    "mtime": 1775377289.4735696,
+    "hash": "8b1f7a071779a8d00fec91471c22d6a8"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\docs\\week-view.png": {
+    "mtime": 1775236016.5565908,
+    "hash": "da7babc57886c4f63ee8d9c5a21358e6"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\public\\icons\\apple-touch-icon.png": {
+    "mtime": 1775368108.705,
+    "hash": "fe16f6bec488b8c836395f6e8524115c"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\public\\icons\\icon-192.png": {
+    "mtime": 1775368108.696,
+    "hash": "60e73352ec5137badc7356b484d304a9"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\public\\icons\\icon-512.png": {
+    "mtime": 1775368108.702,
+    "hash": "53c65a60e6475bd111f7394d49a5ce45"
+  },
+  "C:\\Users\\Ricky\\Desktop\\Projects\\kairo\\public\\icons\\icon.svg": {
+    "mtime": 1775388555.2167177,
+    "hash": "8e3d581040a78660b9f087febee62d73"
+  }
+}
