@@ -81,6 +81,8 @@ export default function WhatsAppPopup({ onClose }) {
   const [isRefreshingGroups, setIsRefreshingGroups] = useState(false)
   const [isRefreshingMessages, setIsRefreshingMessages] = useState(false)
 
+  const hasAutoConnectedRef = useRef(false)
+
   const [error, setError] = useState(null)
   const [view, setView] = useState('groups')
   const [showAddPopup, setShowAddPopup] = useState(false)
@@ -139,6 +141,19 @@ export default function WhatsAppPopup({ onClose }) {
     }, 1000)
     return () => clearInterval(timer)
   }, [qrCode])
+
+  useEffect(() => {
+    if (
+      !isLoadingInitial &&
+      !hasAutoConnectedRef.current &&
+      !isConnected &&
+      connectPhase === 'idle' &&
+      !isMobile
+    ) {
+      hasAutoConnectedRef.current = true
+      handleConnect()
+    }
+  }, [isLoadingInitial, connectPhase, isConnected, isMobile])
 
   useEffect(() => {
     if (!showAddPopup) return
