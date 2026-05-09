@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Get-ChildItem \"C:\\\\Users\\\\Ricky\\\\Desktop\\\\Projects\\\\kairo\\\\src\\\\hooks\\\\\" | Select-Object Name *)"
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\Ricky\\\\Desktop\\\\Projects\\\\kairo\\\\src\\\\hooks\\\\\" | Select-Object Name *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
