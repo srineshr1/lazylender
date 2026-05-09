@@ -285,22 +285,28 @@ app.get('/users/:userId/status', validateUserParam, (req, res) => {
  */
 app.post('/users/:userId/connect', validateUserParam, async (req, res) => {
   const { userId } = req.params
-  
+
   try {
-    // Check if already connected
-    if (sessionManager.hasSession(userId)) {
-      return res.json({ 
-        success: true,
-        message: 'Already connected or connecting'
-      })
+    const sessionState = sessionManager.getSessionState(userId)
+
+    if (sessionState.connected) {
+      return res.json({ success: true, message: 'Already connected' })
     }
-    
+
+    // Session exists and is mid-flight (QR shown or scan in progress) — don't restart it
+    if (sessionState.hasSession) {
+      const status = getUserStatus(userId)
+      if (status.qr || status.message === 'QR Code generated' || status.message === 'Authenticated, loading...') {
+        return res.json({ success: true, message: 'Connection already in progress' })
+      }
+    }
+
     // Create session (async - will generate QR code)
     sessionManager.createSession(userId).catch(err => {
       console.error(`[Connect] Failed to initialize session for ${userId}:`, err.message)
     })
-    
-    res.json({ 
+
+    res.json({
       success: true,
       message: 'Connection initiated. Check status for QR code.'
     })

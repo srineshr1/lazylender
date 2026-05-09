@@ -235,7 +235,12 @@ async function startSession(userId) {
 async function logoutSession(userId) {
   const client = sessions.get(userId)
   if (client) {
-    await client.logout()
+    try {
+      await client.logout()
+    } catch (err) {
+      console.warn(`[SessionManager] Logout error for ${userId}:`, err.message)
+      await client.destroy().catch(() => {})
+    }
     sessions.delete(userId)
     updateUserStatus(userId, { connected: false, qr: null, message: 'Logged out' })
   }
@@ -301,16 +306,11 @@ function getActiveSessions() {
  */
 async function restoreExistingSessions() {
   const userIds = getAllUserIds()
-  console.log(`[SessionManager] Restoring ${userIds.length} existing sessions`)
-  
+  console.log(`[SessionManager] Found ${userIds.length} existing user directories (sessions initialize on demand)`)
+
+  // Reset status files so stale connected/QR state from last run doesn't mislead the frontend
   for (const userId of userIds) {
-    try {
-      const client = getClient(userId)
-      // Don't auto-initialize - let user trigger it
-      console.log(`[SessionManager] Prepared session for ${userId}`)
-    } catch (err) {
-      console.error(`[SessionManager] Failed to restore session for ${userId}:`, err.message)
-    }
+    updateUserStatus(userId, { connected: false, qr: null, message: 'Disconnected' })
   }
 }
 

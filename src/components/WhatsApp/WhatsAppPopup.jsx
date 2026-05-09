@@ -128,7 +128,7 @@ export default function WhatsAppPopup({ onClose }) {
     const timeout = setTimeout(() => {
       setConnectPhase('error')
       setError('Setup stalled after authentication. Please try reconnecting.')
-    }, 30000)
+    }, 120000)
     return () => clearTimeout(timeout)
   }, [connectPhase])
 
