@@ -75,18 +75,23 @@ export const AuthProvider = ({ children }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session)
-      setUser(session?.user ?? null)
-      
+      // Preserve user object reference on token refresh to avoid unnecessary re-renders
+      setUser(prev => {
+        const next = session?.user ?? null
+        if (prev?.id && prev.id === next?.id) return prev
+        return next
+      })
+
       // Register with bridge when user signs in
       if (session?.user && _event === 'SIGNED_IN') {
         await ensureBridgeRegistration(session.user.id)
       }
-      
+
       // Clear bridge credentials on sign out
       if (_event === 'SIGNED_OUT') {
         setBridgeCredentials(null, null)
       }
-      
+
       setLoading(false)
     })
 
