@@ -1,15 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 
-const ENTER_DURATION = 380
-const EXIT_DURATION = 280
+const ENTER_DURATION = 220
+const EXIT_DURATION = 180
 
-/**
- * Manages enter/exit animations for the floating chat panel.
- * Tracks chat phase AND FAB visibility so the FAB morphs out while
- * the chat opens, and fades back in after the chat closes.
- */
 export function useChatAnimation(isOpen) {
-  const [phase, setPhase] = useState('hidden') // 'hidden' | 'entering' | 'visible' | 'exiting'
+  const [phase, setPhase] = useState('hidden')
   const timeoutRef = useRef(null)
 
   useEffect(() => {
@@ -27,13 +22,12 @@ export function useChatAnimation(isOpen) {
     return () => clearTimeout(timeoutRef.current)
   }, [isOpen])
 
-  // FAB is visible when chat is hidden; fades out while opening, fades in after closing
   const fabClass =
     phase === 'hidden'
       ? 'animate-fabFadeIn'
       : phase === 'entering'
         ? 'animate-fabFadeOut'
-        : '' // 'visible' and 'exiting' — fab is already gone
+        : ''
 
   const chatClass =
     phase === 'entering'
@@ -44,5 +38,5 @@ export function useChatAnimation(isOpen) {
 
   const isMounted = phase !== 'hidden'
 
-  return { isMounted, phase, chatClass, fabVisible: phase === 'hidden', fabClass }
+  return { isMounted, phase, chatClass, fabClass }
 }

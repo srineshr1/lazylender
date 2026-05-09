@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\Ricky\\\\Desktop\\\\Projects\\\\kairo\\\\src\\\\hooks\\\\\" | Select-Object Name *)"
+    ]
+  }
+}

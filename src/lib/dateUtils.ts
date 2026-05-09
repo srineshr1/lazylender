@@ -123,11 +123,11 @@ export const getMonthDays = (date: Date): Date[] => {
   const firstDay = startOfMonth(date)
   const lastDay = endOfMonth(date)
   
-  // Get the Monday of the week containing the first day
-  const startDate = startOfWeek(firstDay, { weekStartsOn: 1 })
+  // Get the Sunday of the week containing the first day
+  const startDate = startOfWeek(firstDay, { weekStartsOn: 0 })
   
-  // Get the Sunday of the week containing the last day
-  const endDate = endOfWeek(lastDay, { weekStartsOn: 1 })
+  // Get the Saturday of the week containing the last day
+  const endDate = endOfWeek(lastDay, { weekStartsOn: 0 })
   
   // Generate array of dates
   const days: Date[] = []

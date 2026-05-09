@@ -112,7 +112,23 @@ function getClient(userId) {
           groupName = 'Unknown Group'
         }
       }
-      
+
+      let media = null
+      if (msg.hasMedia && ['image', 'document'].includes(msg.type)) {
+        try {
+          const downloaded = await msg.downloadMedia()
+          if (downloaded) {
+            media = {
+              buffer: Buffer.from(downloaded.data, 'base64'),
+              mimeType: downloaded.mimetype,
+              fileName: downloaded.filename || null,
+            }
+          }
+        } catch (mediaErr) {
+          console.warn(`[SessionManager] Failed to download media for ${userId}: ${mediaErr.message}`)
+        }
+      }
+
       const messageData = {
         id: msg.id._serialized,
         from: msg.from,
@@ -123,6 +139,7 @@ function getClient(userId) {
         messageType: msg.type,
         groupId: msg.from.includes('@g.us') ? msg.from : null,
         groupName: groupName,
+        media,
       }
       messageHandler(userId, messageData)
     }

@@ -7,7 +7,7 @@
 const BRIDGE_URL = import.meta.env.VITE_BRIDGE_URL 
   ? import.meta.env.VITE_BRIDGE_URL 
   : (import.meta.env.DEV ? '' : 'http://localhost:3001')  // Relative URLs in dev (proxy), explicit in prod
-const DEFAULT_TIMEOUT = 5000 // 5 seconds
+const DEFAULT_TIMEOUT = 15000 // 15 seconds (Render free tier cold starts can take 30-60s)
 const MAX_RETRIES = 3
 const BASE_RETRY_DELAY = 500 // 500ms (faster retries for local bridge)
 

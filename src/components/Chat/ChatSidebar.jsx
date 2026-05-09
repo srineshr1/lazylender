@@ -3,25 +3,24 @@ import { useChatStore } from '../../store/useChatStore'
 import { useLLM } from './useLLM'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 
-const RESIZE_EDGE_THRESHOLD = 6
 const ACCEPTED_FILE_TYPES = 'image/png,image/jpeg,image/jpg,image/webp,application/pdf'
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024
+
+const SUGGESTIONS = [
+  { text: "What's on my schedule today?", icon: '📅' },
+  { text: 'Create a new event for tomorrow', icon: '✨' },
+  { text: 'Find free time this week', icon: '🔍' },
+  { text: 'Upload a timetable to import', icon: '📎' },
+]
 
 function TypingDots() {
   return (
-    <div className="flex gap-1 py-1" role="status" aria-label="AI is typing">
-      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce" aria-hidden="true" />
-      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce-2" aria-hidden="true" />
-      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary dot-bounce-3" aria-hidden="true" />
+    <div className="flex items-center gap-1 py-0.5" role="status" aria-label="AI is typing">
+      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary opacity-60 animate-bounce" aria-hidden="true" />
+      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary opacity-60 animate-bounce" style={{ animationDelay: '0.15s' }} aria-hidden="true" />
+      <span className="w-1.5 h-1.5 rounded-full theme-text-secondary opacity-60 animate-bounce" style={{ animationDelay: '0.3s' }} aria-hidden="true" />
     </div>
   )
-}
-
-function formatTime(ts) {
-  if (!ts) return ''
-  const d = new Date(ts)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 }
 
 function FileAttachment({ attachment }) {
@@ -40,85 +39,46 @@ function FileAttachment({ attachment }) {
     )
   }
 
-  if (attachment.type === 'image' && imgError) {
-    return (
-      <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 border border-accent/20 max-w-[200px]">
-        <svg className="w-5 h-5 text-accent/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-        </svg>
-        <span className="text-xs theme-text-secondary truncate">{attachment.name || 'Image unavailable'}</span>
-      </div>
-    )
-  }
-  
-  // PDF or other file types
   return (
-    <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 border border-accent/20">
-      <svg className="w-4 h-4 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    <div className="mt-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20 max-w-[200px]">
+      <svg className="w-4 h-4 text-accent/60 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
       </svg>
-      <span className="text-xs theme-text-primary truncate">{attachment.name || 'File'}</span>
+      <span className="text-xs theme-text-secondary truncate">{attachment.name || 'File'}</span>
     </div>
   )
 }
 
 function ChatMessage({ msg }) {
-  
   if (msg.role === 'user') {
-    const ts = formatTime(msg.timestamp)
     return (
-      <article 
-        className="py-2 animate-fadeUp"
-        aria-label="Your message"
-      >
-        <div className="flex flex-col items-end">
-          <div
-            className="max-w-[86%] rounded-2xl px-4 py-3 border shadow-sm"
-            style={{
-              borderColor: 'color-mix(in srgb, var(--color-accent) 38%, var(--theme-border) 62%)',
-              background: 'linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 14%, var(--theme-panel) 86%), color-mix(in srgb, var(--theme-panel) 92%, transparent))',
-            }}
-          >
-            <div className="text-[13px] leading-[1.55] font-sans theme-text-primary break-words" style={{ whiteSpace: 'pre-wrap' }}>
+      <article className="py-2.5 animate-fadeUp" aria-label="Your message">
+        <div className="flex justify-end">
+          <div className="max-w-[82%] rounded-xl px-4 py-2.5 chat-user-bubble">
+            <div className="text-[13px] leading-relaxed font-sans theme-text-primary break-words whitespace-pre-wrap">
               {msg.text}
             </div>
             {msg.attachments?.map((attachment, idx) => (
               <FileAttachment key={idx} attachment={attachment} />
             ))}
           </div>
-          {ts && <span className="mt-1 px-1 text-[10px] theme-text-secondary opacity-80">{ts}</span>}
         </div>
       </article>
     )
   }
   
-  const ts = formatTime(msg.timestamp)
   return (
-    <article 
-      className="py-2 animate-fadeUp"
-      aria-label="AI response"
-    >
-      <div className="flex gap-2.5 items-start">
-        {/* AI Avatar */}
-        <div 
-          className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border"
-          style={{
-            borderColor: 'color-mix(in srgb, var(--color-accent) 30%, var(--theme-border) 70%)',
-            background: 'color-mix(in srgb, var(--color-accent) 14%, var(--theme-panel) 86%)',
-          }}
-          aria-hidden="true"
-        >
-          <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <article className="py-2.5 animate-fadeUp" aria-label="AI response">
+      <div className="flex gap-3 items-start">
+        <div className="w-6 h-6 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
+          <svg className="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 16l.394 1.183a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" />
           </svg>
         </div>
-        {/* Message Bubble */}
-        <div className="flex-1 max-w-[86%] rounded-2xl px-4 py-3 glass-subtle shadow-sm">
-          <div className="text-[13px] leading-[1.6] font-sans theme-text-primary break-words" style={{ whiteSpace: 'pre-wrap' }}>
+        <div className="flex-1 min-w-0 pt-0.5">
+          <div className="text-[13px] leading-relaxed font-sans theme-text-primary break-words whitespace-pre-wrap">
             {msg.text}
           </div>
-          {ts && <div className="mt-1.5 text-[10px] theme-text-secondary opacity-80">{ts}</div>}
         </div>
       </div>
     </article>
@@ -131,11 +91,6 @@ export default function ChatSidebar({ onClose, initialMessage }) {
   const isMobile = useIsMobile()
   const [input, setInput] = useState(initialMessage || '')
   const [sending, setSending] = useState(false)
-  const [height, setHeight] = useState(600)
-  const [width, setWidth] = useState(320)
-  const [nearEdge, setNearEdge] = useState(null)
-  const [isResizing, setIsResizing] = useState(false)
-  const [resizeEdge, setResizeEdge] = useState(null)
   const [selectedFile, setSelectedFile] = useState(null)
   const [filePreview, setFilePreview] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -143,42 +98,28 @@ export default function ChatSidebar({ onClose, initialMessage }) {
   const textareaRef = useRef(null)
   const fileInputRef = useRef(null)
   const chatRegionId = useId()
-  const sidebarRef = useRef(null)
-  const startX = useRef(0)
-  const startY = useRef(0)
-  const startWidth = useRef(0)
-  const startHeight = useRef(0)
   const prevMessageCountRef = useRef(0)
   const prevTypingRef = useRef(false)
   const isInitialMountRef = useRef(true)
 
-  // Auto-focus textarea when opened with an initial message
   useEffect(() => {
     if (initialMessage) {
       setTimeout(() => textareaRef.current?.focus(), 100)
     }
   }, [])
 
-  // File validation and preview generation
   const handleFileSelect = useCallback((file) => {
     if (!file) return
-
-    // Validate file type
     const validTypes = ACCEPTED_FILE_TYPES.split(',')
     if (!validTypes.includes(file.type)) {
       alert('Please upload an image (PNG, JPG, WebP) or PDF file.')
       return
     }
-
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       alert('File size must be less than 10MB.')
       return
     }
-
     setSelectedFile(file)
-
-    // Generate preview for images
     if (file.type.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = (e) => setFilePreview(e.target.result)
@@ -188,155 +129,77 @@ export default function ChatSidebar({ onClose, initialMessage }) {
     }
   }, [])
 
-  // Clear selected file
   const clearSelectedFile = useCallback(() => {
     setSelectedFile(null)
     setFilePreview(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
-  // Handle file input change
   const handleFileInputChange = useCallback((e) => {
     const file = e.target.files?.[0]
     if (file) handleFileSelect(file)
   }, [handleFileSelect])
 
-  // Drag and drop handlers
   const handleDragEnter = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(true)
+    e.preventDefault(); e.stopPropagation(); setIsDragging(true)
   }, [])
-
   const handleDragLeave = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    // Only set to false if leaving the container entirely
-    if (!e.currentTarget.contains(e.relatedTarget)) {
-      setIsDragging(false)
-    }
+    e.preventDefault(); e.stopPropagation()
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false)
   }, [])
-
   const handleDragOver = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault(); e.stopPropagation()
   }, [])
-
   const handleDrop = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-
+    e.preventDefault(); e.stopPropagation(); setIsDragging(false)
     const file = e.dataTransfer.files?.[0]
     if (file) handleFileSelect(file)
   }, [handleFileSelect])
 
-  const handleMouseMove = (e) => {
-    if (isResizing) return
-    const sidebar = sidebarRef.current
-    if (!sidebar) return
-    const rect = sidebar.getBoundingClientRect()
-    const distanceFromLeft = e.clientX - rect.left
-    const distanceFromTop = e.clientY - rect.top
-
-    const isNearLeft = distanceFromLeft <= RESIZE_EDGE_THRESHOLD
-    const isNearTop = distanceFromTop <= RESIZE_EDGE_THRESHOLD
-
-    if (isNearLeft && isNearTop) {
-      setNearEdge('corner')
-    } else if (isNearLeft) {
-      setNearEdge('left')
-    } else if (isNearTop) {
-      setNearEdge('top')
-    } else {
-      setNearEdge(null)
-    }
-  }
-
-  const handleMouseDown = (e, edge) => {
-    e.preventDefault()
-    setIsResizing(true)
-    setResizeEdge(edge)
-    startX.current = e.clientX
-    startY.current = e.clientY
-    startWidth.current = width
-    startHeight.current = height
-  }
-
   useEffect(() => {
-    if (!isResizing) return
-
-    const onMouseMove = (e) => {
-      if (resizeEdge === 'left' || resizeEdge === 'corner') {
-        const delta = startX.current - e.clientX
-        const newWidth = Math.min(Math.max(280, startWidth.current + delta), 600)
-        setWidth(newWidth)
-      }
-      if (resizeEdge === 'top' || resizeEdge === 'corner') {
-        const delta = startY.current - e.clientY
-        const newHeight = Math.min(Math.max(300, startHeight.current + delta), window.innerHeight * 0.85)
-        setHeight(newHeight)
-      }
-    }
-
-    const onMouseUp = () => {
-      setIsResizing(false)
-      setResizeEdge(null)
-    }
-
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
-
-    return () => {
-      document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
-    }
-  }, [isResizing, resizeEdge])
-
-  useEffect(() => {
-    // Scroll to bottom on mount (instant) or when new messages arrive (smooth)
     const currentMessageCount = messages.length
     const messageAdded = currentMessageCount > prevMessageCountRef.current
     const typingStarted = isTyping && !prevTypingRef.current
-    
     if (isInitialMountRef.current) {
-      // On initial mount, scroll instantly to bottom without animation
       bottomRef.current?.scrollIntoView({ behavior: 'instant' })
       isInitialMountRef.current = false
     } else if (messageAdded || typingStarted) {
-      // For new messages, use smooth scroll
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-    
     prevMessageCountRef.current = currentMessageCount
     prevTypingRef.current = isTyping
   }, [messages, isTyping])
 
   const handleSend = async () => {
     const text = input.trim()
-    // Allow sending with file only, or text only, or both
     if (!text && !selectedFile) return
     if (sending) return
-
     setInput('')
-    if (textareaRef.current) { textareaRef.current.style.height = 'auto' }
+    if (textareaRef.current) textareaRef.current.style.height = 'auto'
     setSending(true)
-
     try {
       if (selectedFile) {
-        // If file is selected, start timetable import
         await startTimetableImport(selectedFile)
         clearSelectedFile()
       } else {
-        // Normal text message
         await send(text)
       }
     } finally {
       setSending(false)
     }
   }
+
+  const handleSuggestionClick = useCallback((text) => {
+    if (text === 'Upload a timetable to import') {
+      fileInputRef.current?.click()
+    } else {
+      setInput(text)
+      setTimeout(() => {
+        textareaRef.current?.focus()
+        textareaRef.current?.setSelectionRange(text.length, text.length)
+      }, 50)
+    }
+  }, [])
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
@@ -349,83 +212,59 @@ export default function ChatSidebar({ onClose, initialMessage }) {
   }
 
   const onlineDot = isOnline === true
-    ? 'bg-green-400 shadow-[0_0_4px_rgba(111,207,151,0.5)]'
+    ? 'bg-green-400 shadow-[0_0_6px_rgba(111,207,151,0.4)]'
     : isOnline === false
-    ? 'bg-gray-500'
+    ? 'bg-gray-400'
     : 'bg-yellow-400'
 
-  const onlineStatus = isOnline === true ? 'Online' : isOnline === false ? 'Offline' : 'Connecting'
-
-  const cursorStyle = isResizing
-    ? (resizeEdge === 'corner' ? 'nwse-resize' : resizeEdge === 'left' ? 'ew-resize' : resizeEdge === 'top' ? 'ns-resize' : 'default')
-    : nearEdge === 'corner'
-    ? 'nwse-resize'
-    : nearEdge === 'left'
-    ? 'ew-resize'
-    : nearEdge === 'top'
-    ? 'ns-resize'
-    : undefined
-
-  // On mobile, use full height/width from parent container (MobileDrawer)
-  // On desktop, use resizable dimensions
   const containerStyle = isMobile
     ? { height: '100%', width: '100%' }
-    : { 
-        height: `${height}px`,
-        width: `${width}px`,
-        minWidth: '280px',
-        maxWidth: '600px',
-        maxHeight: '85vh',
-        cursor: cursorStyle,
-      }
+    : { height: '560px', width: '380px', maxHeight: '80vh', maxWidth: '90vw' }
+
+  const showSuggestions = messages.length === 0 && !isInWizard
 
   return (
     <aside 
-      ref={sidebarRef}
       className={`flex-shrink-0 flex flex-col overflow-hidden ${
         isMobile 
           ? 'h-full w-full' 
-          : `border rounded-2xl shadow-2xl glass-panel ${isResizing ? 'select-none' : ''}`
+          : 'border rounded-2xl shadow-xl chat-panel'
       }`}
       role="complementary"
       aria-label="AI chat assistant"
       style={containerStyle}
-      onMouseMove={isMobile ? undefined : handleMouseMove}
-      onMouseLeave={isMobile ? undefined : () => setNearEdge(null)}
     >
       {/* Header */}
       <header
-        className="px-4 pt-4 pb-3 border-b flex-shrink-0"
-        style={{
-          borderColor: 'color-mix(in srgb, var(--theme-border) 72%, transparent)',
-          background: 'linear-gradient(180deg, color-mix(in srgb, var(--theme-panel) 72%, transparent), color-mix(in srgb, var(--theme-panel) 42%, transparent))',
-        }}
+        className="px-4 py-3 border-b flex-shrink-0 flex items-center justify-between"
+        style={{ borderColor: 'color-mix(in srgb, var(--theme-border) 50%, transparent)', background: 'var(--theme-panel)' }}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span 
-              className={`w-2 h-2 rounded-full flex-shrink-0 ${onlineDot}`} 
-              role="status"
-              aria-label={`AI assistant status: ${onlineStatus}`}
-            />
-            <div className="min-w-0">
-              <div className="font-display text-[18px] tracking-tight theme-text-primary leading-none">AI Assistant</div>
-              <div className="text-[10.5px] theme-text-secondary mt-1">{onlineStatus} · Calendar-aware responses</div>
-            </div>
-            {isInWizard && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent font-medium border border-accent/30">
-                Importing
-              </span>
-            )}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+            <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 16l.394 1.183a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" />
+            </svg>
           </div>
+          <div className="min-w-0">
+            <div className="font-medium text-sm theme-text-primary">AI Assistant</div>
+            <div className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${onlineDot}`} />
+              <span className="text-[10px] theme-text-secondary">
+                {isOnline === true ? 'Online' : isOnline === false ? 'Offline' : 'Connecting'}
+              </span>
+            </div>
+          </div>
+          {isInWizard && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-accent/10 text-accent font-medium border border-accent/20">
+              Importing
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           {isInWizard && (
             <button
-              onClick={() => {
-                resetWizard()
-                clearSelectedFile()
-              }}
-              className="text-[11px] px-2 py-1 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
+              onClick={() => { resetWizard(); clearSelectedFile() }}
+              className="text-[11px] px-2 py-1 rounded-md text-red-400 hover:bg-red-500/10 transition-colors"
               aria-label="Cancel timetable import"
             >
               Cancel
@@ -443,24 +282,17 @@ export default function ChatSidebar({ onClose, initialMessage }) {
             </button>
           )}
         </div>
-        </div>
       </header>
 
       {/* Error Banner */}
       {error && (
-        <div className="mx-4 mt-3 mb-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-2.5 animate-fadeUp">
+        <div className="mx-4 mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-2.5 animate-fadeUp">
           <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <p className="text-xs text-red-400 leading-relaxed flex-1">{error}</p>
-          <button 
-            onClick={clearError} 
-            className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0 p-1"
-            aria-label="Dismiss error"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button onClick={clearError} className="text-red-400 hover:text-red-300 transition-colors flex-shrink-0 p-1" aria-label="Dismiss error">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
       )}
@@ -468,7 +300,7 @@ export default function ChatSidebar({ onClose, initialMessage }) {
       {/* Messages */}
       <div 
         id={chatRegionId}
-        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 flex flex-col relative custom-scrollbar ${isDragging ? 'bg-accent/5' : ''}`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 flex flex-col relative custom-scrollbar ${isDragging ? 'bg-accent/5' : ''}`}
         role="log"
         aria-label="Chat messages"
         aria-live="polite"
@@ -480,9 +312,9 @@ export default function ChatSidebar({ onClose, initialMessage }) {
       >
         {/* Drag overlay */}
         {isDragging && (
-          <div className="absolute inset-0 flex items-center justify-center bg-accent/10 border-2 border-dashed border-accent rounded-lg z-10 pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center bg-accent/5 border-2 border-dashed border-accent/30 rounded-lg z-10 pointer-events-none">
             <div className="text-center">
-              <svg className="w-8 h-8 mx-auto mb-2 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-8 h-8 mx-auto mb-2 text-accent/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <p className="text-sm text-accent font-medium">Drop timetable here</p>
@@ -490,21 +322,43 @@ export default function ChatSidebar({ onClose, initialMessage }) {
             </div>
           </div>
         )}
+
+        {/* Empty state with suggestions */}
+        {showSuggestions && (
+          <div className="flex-1 flex flex-col items-center justify-center px-2">
+            <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4" aria-hidden="true">
+              <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 16l.394 1.183a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" />
+              </svg>
+            </div>
+            <p className="text-sm font-medium theme-text-primary mb-0.5">How can I help you?</p>
+            <p className="text-xs theme-text-secondary mb-5">Ask me about your schedule or upload a timetable</p>
+            <div className="flex flex-wrap justify-center gap-2 max-w-[320px]">
+              {SUGGESTIONS.map((s, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSuggestionClick(s.text)}
+                  className="suggestion-chip group flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all text-left"
+                  style={{ borderColor: 'color-mix(in srgb, var(--theme-border) 60%, transparent)' }}
+                >
+                  <span className="text-sm">{s.icon}</span>
+                  <span className="text-[12px] theme-text-secondary group-hover:theme-text-primary transition-colors leading-tight">{s.text}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {messages.map((m) => <ChatMessage key={m.id} msg={m} />)}
         {isTyping && (
-          <div className="py-2">
-            <div className="flex gap-2.5 items-start">
-              {/* AI Avatar */}
-              <div 
-                className="w-7 h-7 rounded-full bg-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5"
-                aria-hidden="true"
-              >
-                <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <div className="py-2.5">
+            <div className="flex gap-3 items-start">
+              <div className="w-6 h-6 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
+                <svg className="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 22l-.394-1.433a2.25 2.25 0 00-1.423-1.423L13.25 19l1.433-.394a2.25 2.25 0 001.423-1.423L16.5 16l.394 1.183a2.25 2.25 0 001.423 1.423L19.75 19l-1.433.394a2.25 2.25 0 00-1.423 1.423z" />
                 </svg>
               </div>
-              {/* Typing indicator */}
-              <div className="rounded-2xl px-4 py-2.5 glass-subtle shadow-sm">
+              <div className="pt-1.5">
                 <TypingDots />
               </div>
             </div>
@@ -513,12 +367,10 @@ export default function ChatSidebar({ onClose, initialMessage }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input - extra bottom padding on mobile for MobileNav and safe area */}
-      <div
-        className={`px-4 pt-2 flex-shrink-0 ${isMobile ? 'pb-20' : 'pb-4'}`}
+      {/* Input */}
+      <div className={`px-4 pt-2 flex-shrink-0 ${isMobile ? 'pb-20' : 'pb-4'}`}
         style={isMobile ? { paddingBottom: 'max(80px, calc(64px + env(safe-area-inset-bottom)))' } : undefined}
       >
-        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
@@ -528,47 +380,38 @@ export default function ChatSidebar({ onClose, initialMessage }) {
           aria-hidden="true"
         />
 
-        {/* File preview */}
         {selectedFile && (
-          <div className="mb-2.5 p-2.5 rounded-xl glass-subtle border border-accent/20 flex items-center gap-2.5 animate-fadeUp">
+          <div className="mb-2.5 p-2.5 rounded-xl border flex items-center gap-2.5 animate-fadeUp"
+            style={{ borderColor: 'color-mix(in srgb, var(--color-accent) 30%, var(--theme-border) 70%)', background: 'color-mix(in srgb, var(--color-accent) 6%, var(--theme-panel) 94%)' }}
+          >
             {filePreview ? (
-              <img src={filePreview} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-accent/30" />
+              <img src={filePreview} alt="Preview" className="w-10 h-10 object-cover rounded-lg border" style={{ borderColor: 'color-mix(in srgb, var(--color-accent) 30%, var(--theme-border) 70%)' }} />
             ) : (
-              <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/30 flex items-center justify-center">
-                <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
+                <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
             )}
             <div className="flex-1 min-w-0">
               <p className="text-xs theme-text-primary truncate">{selectedFile.name}</p>
-                <p className="text-[10px] theme-text-secondary">
-                  {(selectedFile.size / 1024).toFixed(1)} KB
-                </p>
-              </div>
-              <button
-              onClick={clearSelectedFile}
-              className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors"
-              aria-label="Remove file"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <p className="text-[10px] theme-text-secondary">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+            </div>
+            <button onClick={clearSelectedFile} className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors" aria-label="Remove file">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         )}
 
-        <div
-          className="flex items-center gap-2 border rounded-xl px-2.5 py-2 transition-colors glass-subtle"
-          style={{ borderColor: 'color-mix(in srgb, var(--theme-border) 80%, transparent)' }}
+        <div className="flex items-center gap-2 border rounded-xl px-3 py-2 transition-colors"
+          style={{ borderColor: 'color-mix(in srgb, var(--theme-border) 55%, transparent)', background: 'var(--theme-panel)' }}
         >
-          {/* Attachment button */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="h-8 w-8 rounded-lg hover:text-accent hover:bg-accent/10 transition-colors flex items-center justify-center flex-shrink-0 theme-text-secondary disabled:opacity-50"
+            className="h-8 w-8 rounded-lg hover:text-accent hover:bg-accent/10 transition-colors flex items-center justify-center flex-shrink-0 theme-text-secondary disabled:opacity-40"
             disabled={sending || isInWizard}
             aria-label="Attach timetable image or PDF"
-            title="Upload timetable (image or PDF)"
+            title="Upload timetable"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -579,61 +422,32 @@ export default function ChatSidebar({ onClose, initialMessage }) {
           <textarea
             id="chat-input"
             ref={textareaRef}
-            className="flex-1 bg-transparent border-none outline-none text-[13px] theme-text-primary placeholder:text-[color:var(--theme-text-secondary)] resize-none min-h-[20px] max-h-28 leading-[1.5] font-sans px-1"
-            placeholder={selectedFile ? "Press send to import timetable…" : "Ask about your calendar…"}
+            className="flex-1 bg-transparent border-none outline-none text-[13px] theme-text-primary placeholder:text-[color:var(--theme-text-secondary)] resize-none min-h-[20px] max-h-28 leading-relaxed font-sans"
+            placeholder={selectedFile ? "Press send to import timetable..." : "Message AI Assistant..."}
             value={input}
             onChange={handleTextarea}
             onKeyDown={handleKey}
             rows={1}
-            aria-describedby="chat-input-hint"
           />
           <button
-            className="h-8 w-8 rounded-lg border transition-colors flex items-center justify-center flex-shrink-0 text-base disabled:text-gray-600 disabled:cursor-not-allowed"
+            className="h-8 w-8 rounded-lg transition-colors flex items-center justify-center flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
             style={{
-              color: sending || (!input.trim() && !selectedFile)
-                ? 'var(--theme-text-secondary)'
-                : 'var(--theme-text-primary)',
-              borderColor: input.trim() || selectedFile
-                ? 'color-mix(in srgb, var(--color-accent) 42%, var(--theme-border) 58%)'
-                : 'color-mix(in srgb, var(--theme-border) 85%, transparent)',
-              background: input.trim() || selectedFile
-                ? 'color-mix(in srgb, var(--color-accent) 16%, var(--theme-panel) 84%)'
-                : 'transparent',
+              color: (sending || (!input.trim() && !selectedFile)) ? 'var(--theme-text-secondary)' : '#fff',
+              background: (input.trim() || selectedFile) ? 'var(--color-accent)' : 'transparent',
             }}
             onClick={handleSend}
             disabled={sending || (!input.trim() && !selectedFile)}
-            aria-label={sending ? 'Sending message...' : selectedFile ? 'Import timetable' : 'Send message'}
+            aria-label={sending ? 'Sending...' : selectedFile ? 'Import timetable' : 'Send message'}
           >
-            <span aria-hidden="true">↗</span>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+            </svg>
           </button>
         </div>
-        <p id="chat-input-hint" className="text-[10.5px] text-center mt-1.5 theme-text-secondary tracking-[0.02em]">
-          {selectedFile ? 'Send to import timetable' : 'Enter to send · Shift+Enter for new line'}
+        <p className="text-[10px] text-center mt-1.5 theme-text-secondary opacity-50">
+          AI can make mistakes. Verify important information.
         </p>
       </div>
-
-      {/* Resize zones - desktop only */}
-      {!isMobile && (
-        <>
-          {/* Left edge resize zone */}
-          <div
-            className="absolute top-0 bottom-0 left-0 w-6 -ml-3"
-            onMouseDown={(e) => handleMouseDown(e, 'left')}
-          />
-
-          {/* Top edge resize zone */}
-          <div
-            className="absolute top-0 left-0 right-0 h-6 -mt-3"
-            onMouseDown={(e) => handleMouseDown(e, 'top')}
-          />
-
-          {/* Top-left corner resize zone */}
-          <div
-            className="absolute top-0 left-0 w-6 h-6 -ml-3 -mt-3 cursor-nwse-resize"
-            onMouseDown={(e) => handleMouseDown(e, 'corner')}
-          />
-        </>
-      )}
     </aside>
   )
 }

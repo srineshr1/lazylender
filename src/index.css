@@ -630,73 +630,46 @@ select:focus-visible,
 .animate-fadeIn { animation: fadeIn 0.2s ease forwards; }
 
 @keyframes chatOpen {
-  0% {
-    opacity: 0;
-    transform: scale(0.35);
-    border-radius: 48px;
-  }
-  50% {
-    opacity: 1;
-    border-radius: 1.25rem;
-  }
-  75% {
-    transform: scale(1.02);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-    border-radius: 1rem;
-  }
+  0% { opacity: 0; transform: translateY(16px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes chatClose {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-    border-radius: 1rem;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.35);
-    border-radius: 48px;
-  }
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(12px) scale(0.97); }
 }
-.animate-chatOpen  { animation: chatOpen  0.38s cubic-bezier(0.32, 0.72, 0, 1) forwards; transform-origin: bottom right; }
-.animate-chatClose { animation: chatClose 0.28s cubic-bezier(0.32, 0, 0.67, 0) forwards; transform-origin: bottom right; pointer-events: none; }
+.animate-chatOpen  { animation: chatOpen  0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-chatClose { animation: chatClose 0.18s cubic-bezier(0.5, 0, 0.75, 0) forwards; pointer-events: none; }
 
 @keyframes fabFadeOut {
   from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 0; transform: scale(0.8); }
 }
 @keyframes fabFadeIn {
-  from { opacity: 0; transform: scale(0.7); }
+  from { opacity: 0; transform: scale(0.8); }
   to   { opacity: 1; transform: scale(1); }
 }
-.animate-fabFadeOut { animation: fabFadeOut 0.18s ease-in forwards; pointer-events: none; }
-.animate-fabFadeIn  { animation: fabFadeIn  0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-fabFadeOut { animation: fabFadeOut 0.15s ease-out forwards; pointer-events: none; }
+.animate-fabFadeIn  { animation: fabFadeIn  0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-/* Chat FAB suggestion cycling */
-@keyframes suggestionIn {
-  from { opacity: 0; transform: translateX(8px); }
-  to   { opacity: 1; transform: translateX(0); }
+/* Chat panel */
+.chat-panel {
+  background: var(--theme-panel);
 }
-@keyframes suggestionOut {
-  from { opacity: 1; transform: translateX(0); }
-  to   { opacity: 0; transform: translateX(-8px); }
+.chat-user-bubble {
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--theme-panel) 92%);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 12%, var(--theme-border) 88%);
 }
-.animate-suggestionIn  { animation: suggestionIn  0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.animate-suggestionOut { animation: suggestionOut 0.2s  cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 
-/* FAB group entrance */
-@keyframes fabGroupIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to   { opacity: 1; transform: scale(1); }
+/* Suggestion chips */
+.suggestion-chip {
+  background: var(--theme-panel);
 }
-@keyframes fabSuggestionIn {
-  from { opacity: 0; transform: translateX(12px); }
-  to   { opacity: 1; transform: translateX(0); }
+.suggestion-chip:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, var(--theme-border) 60%) !important;
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--theme-panel) 94%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-.animate-fabGroupIn      { animation: fabGroupIn      0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.animate-fabSuggestionIn { animation: fabSuggestionIn 0.3s  0.15s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 @keyframes whatsappPulse {
   0%, 100% { transform: scale(1); }

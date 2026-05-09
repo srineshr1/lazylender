@@ -59,8 +59,8 @@ function llmPrompt(content, groupName) {
 Today is ${todayISO()}.
 Group: ${groupName}
 
-Return ONLY a JSON array. No markdown and no explanation.
-If no valid upcoming events are present, return [].
+Return ONLY a JSON object: {"events": [...array...]}. No markdown, no explanation.
+If no valid upcoming events are present, return {"events": []}.
 
 Each event object shape:
 {
@@ -107,7 +107,7 @@ async function analyzeTextWithGroq(text, groupName) {
   try {
     const raw = await callGroq(
       [
-        { role: 'system', content: 'Extract upcoming events only. Return strict JSON object: {"events": [...] }.' },
+        { role: 'system', content: 'Extract upcoming events only. Return a JSON object: {"events": [...]}. No markdown.' },
         { role: 'user', content: llmPrompt(text, groupName) },
       ],
       TEXT_MODEL
@@ -115,7 +115,8 @@ async function analyzeTextWithGroq(text, groupName) {
 
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    const events = extractEvents(JSON.stringify(parsed.events || []), groupName)
+    const eventsArray = Array.isArray(parsed) ? parsed : (parsed.events ?? [])
+    const events = extractEvents(JSON.stringify(eventsArray), groupName)
     return dedupeEvents(events).filter((event) => isUpcoming(event.date))
   } catch (err) {
     console.error(`[Processor] Text analysis failed: ${err.message}`)
@@ -152,7 +153,8 @@ async function analyzeImageWithGroq(media, groupName, caption = '') {
 
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    const events = extractEvents(JSON.stringify(parsed.events || []), groupName)
+    const eventsArray = Array.isArray(parsed) ? parsed : (parsed.events ?? [])
+    const events = extractEvents(JSON.stringify(eventsArray), groupName)
     return dedupeEvents(events).filter((event) => isUpcoming(event.date))
   } catch (err) {
     console.error(`[Processor] Image analysis failed: ${err.message}`)
@@ -214,19 +216,17 @@ async function processIncomingMessage(userId, incomingMessage) {
 
   let events = []
 
-  // Handle text messages - whatsapp-web.js uses 'chat' for regular messages
-  // Also support 'conversation' and 'extendedTextMessage' for compatibility
   const textTypes = ['chat', 'conversation', 'extendedTextMessage']
   if (textTypes.includes(incomingMessage.messageType)) {
     console.log(`[Processor] Processing text message (type: ${incomingMessage.messageType}) from ${groupName}`)
     events = await analyzeTextWithGroq(incomingMessage.text || '', groupName)
   }
 
-  if (incomingMessage.messageType === 'imageMessage') {
+  if (incomingMessage.messageType === 'image') {
     events = await analyzeImageWithGroq(incomingMessage.media, groupName, incomingMessage.text || '')
   }
 
-  if (incomingMessage.messageType === 'documentMessage') {
+  if (incomingMessage.messageType === 'document') {
     const mime = incomingMessage.media?.mimeType || ''
     if (mime.includes('pdf') || (incomingMessage.media?.fileName || '').toLowerCase().endsWith('.pdf')) {
       events = await analyzePdfWithGroq(incomingMessage.media, groupName, incomingMessage.text || '')

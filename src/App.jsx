@@ -70,7 +70,7 @@ function CalendarApp() {
   // Desktop floating chat state
   const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false)
   const [chatInitialMessage, setChatInitialMessage] = useState('')
-  const { isMounted, phase, chatClass, fabVisible, fabClass } = useChatAnimation(isFloatingChatOpen)
+  const { isMounted, chatClass, fabClass } = useChatAnimation(isFloatingChatOpen)
 
   const handleChatOpen = useCallback((suggestionText) => {
     setChatInitialMessage(suggestionText || '')

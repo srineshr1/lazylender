@@ -10,6 +10,8 @@ export function useWhatsAppWebSocket({ onNewEvents }) {
   const reconnectTimeoutRef = useRef(null)
   const isUnmountedRef = useRef(false)
   const processedIdsRef = useRef(new Set())
+  const onNewEventsRef = useRef(onNewEvents)
+  useEffect(() => { onNewEventsRef.current = onNewEvents }, [onNewEvents])
 
   const getWebSocketUrl = useCallback(() => {
     const bridgeUrl = getBridgeUrl()
@@ -89,8 +91,8 @@ export function useWhatsAppWebSocket({ onNewEvents }) {
               if (processedIdsRef.current.has(ev.id)) continue
               processedIdsRef.current.add(ev.id)
 
-              if (onNewEvents) {
-                onNewEvents(ev)
+              if (onNewEventsRef.current) {
+                onNewEventsRef.current(ev)
               }
             }
           }
@@ -119,7 +121,7 @@ export function useWhatsAppWebSocket({ onNewEvents }) {
     } catch (err) {
       console.error('[WS] Failed to create WebSocket:', err)
     }
-  }, [getWebSocketUrl, onNewEvents])
+  }, [getWebSocketUrl])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
