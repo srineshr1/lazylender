@@ -4,7 +4,21 @@
       "Bash(Get-ChildItem \"C:\\\\Users\\\\Ricky\\\\Desktop\\\\Projects\\\\kairo\\\\src\\\\hooks\\\\\" | Select-Object Name *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npm run *)",
+      "Bash(firebase deploy *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('./bridge-server.js'\\)\")",
+      "Bash(kill %1)",
+      "Bash(wait)",
+      "Bash(node -e \"process.env.SUPABASE_URL='http://x'; process.env.SUPABASE_SERVICE_ROLE_KEY='x'; process.env.NODE_ENV='development'; process.env.BRIDGE_REQUIRE_AUTH='false'; process.env.PORT='3099'; const m = require\\('./whatsapp-bridge/bridge-server.js'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),1500\\)\")",
+      "Bash(node -e \"process.chdir\\('C:/Users/Ricky/Desktop/Projects/kairo/whatsapp-bridge'\\); process.env.SUPABASE_URL='http://x.local'; process.env.SUPABASE_SERVICE_ROLE_KEY='x'; process.env.NODE_ENV='development'; process.env.BRIDGE_REQUIRE_AUTH='false'; process.env.PORT='3099'; require\\('./bridge-server.js'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),1500\\)\")",
+      "Bash(npm test *)",
+      "Bash(npx vitest *)",
+      "Bash(node -e \"process.chdir\\('C:/Users/Ricky/Desktop/Projects/kairo/whatsapp-bridge'\\); process.env.SUPABASE_URL='http://x.local'; process.env.SUPABASE_SERVICE_ROLE_KEY='x'; process.env.NODE_ENV='development'; process.env.BRIDGE_REQUIRE_AUTH='false'; process.env.PORT='3098'; require\\('./bridge-server.js'\\); setTimeout\\(\\(\\)=>process.exit\\(0\\),2500\\)\")",
+      "Bash(SUPABASE_URL='http://x.local' SUPABASE_SERVICE_ROLE_KEY='x' NODE_ENV='development' BRIDGE_REQUIRE_AUTH='false' PORT='3098' timeout 3 node bridge-server.js)",
+      "Bash(SUPABASE_URL='http://x.local' SUPABASE_SERVICE_ROLE_KEY='x' NODE_ENV='development' BRIDGE_REQUIRE_AUTH='false' PORT='3098' node bridge-server.js)",
+      "Read(//tmp/**)"
     ]
   }
 }

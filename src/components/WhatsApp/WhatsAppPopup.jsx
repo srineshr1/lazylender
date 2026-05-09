@@ -1,424 +1,203 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { QRCodeSVG } from 'qrcode.react'
 import { useDarkStore } from '../../store/useDarkStore'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useWhatsAppBridgeStatus } from '../../hooks/useWhatsAppBridgeStatus'
+import { useAuth } from '../../contexts/AuthContext'
+import getSupabaseClient from '../../lib/supabase'
 import LoadingSpinner from '../LoadingSpinner'
 import {
   connectWhatsApp,
   disconnectWhatsApp,
   logoutWhatsApp,
-  getStatus,
-  getGroups,
-  getContacts,
-  getWatchedGroups,
-  setWatchedGroups,
-  getCurrentUserId,
-  getRecentMessages,
+  hasCredentials,
 } from '../../api/whatsappClient'
 
-const ACTIVE_PHASES = ['connecting', 'launching', 'authenticating']
+const ACTIVE_PHASES = ['CONNECTING', 'AUTHENTICATING']
 
 const PHASE_LABELS = {
-  connecting: 'Connecting to WhatsApp',
-  launching: 'Launching browser session',
-  authenticating: 'Finishing setup',
+  CONNECTING: 'Connecting to WhatsApp',
+  AUTHENTICATING: 'Finishing setup',
+  QR_READY: 'Scan to link',
 }
 
 const PHASE_HINTS = {
-  connecting: 'This usually takes 30–60 seconds',
-  launching: 'Starting secure connection...',
-  authenticating: 'Almost ready!',
+  CONNECTING: 'This usually takes 30–60 seconds',
+  AUTHENTICATING: 'Almost ready!',
 }
 
-function calcProgress(elapsedMs) {
-  const t = elapsedMs / 1000
-  if (t < 4) return (t / 4) * 35
-  if (t < 15) return 35 + ((t - 4) / 11) * 25
-  if (t < 60) return 60 + ((t - 15) / 45) * 25
-  return 85
-}
-
-function statusMeta(connectPhase, isConnected) {
-  if (isConnected || connectPhase === 'connected') return { label: 'Connected', tone: 'success' }
-  if (['connecting', 'launching'].includes(connectPhase)) return { label: 'Connecting', tone: 'pending' }
-  if (connectPhase === 'qr_ready') return { label: 'Scan QR', tone: 'pending' }
-  if (connectPhase === 'authenticating') return { label: 'Authenticating', tone: 'pending' }
-  if (connectPhase === 'timeout') return { label: 'Timed out', tone: 'warning' }
-  if (connectPhase === 'error') return { label: 'Error', tone: 'danger' }
+function statusMeta(status) {
+  if (status === 'CONNECTED') return { label: 'Connected', tone: 'success' }
+  if (status === 'CONNECTING') return { label: 'Connecting', tone: 'pending' }
+  if (status === 'QR_READY') return { label: 'Scan QR', tone: 'pending' }
+  if (status === 'AUTHENTICATING') return { label: 'Authenticating', tone: 'pending' }
+  if (status === 'FAILED') return { label: 'Error', tone: 'danger' }
   return { label: 'Disconnected', tone: 'danger' }
-}
-
-function formatTime(ts) {
-  if (!ts) return '--'
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function WhatsAppPopup({ onClose }) {
   const { isDark } = useDarkStore()
   const isMobile = useIsMobile()
+  const { user } = useAuth()
+  const supabase = getSupabaseClient()
   const popupRef = useRef(null)
 
-  const [connectPhase, setConnectPhase] = useState('idle')
-  const connectPhaseRef = useRef('idle')
-  const connectStartTimeRef = useRef(null)
-  const [progressPercent, setProgressPercent] = useState(0)
-  const [dots, setDots] = useState('')
-
-  const [qrCode, setQrCode] = useState(null)
-  const [qrExpiryCountdown, setQrExpiryCountdown] = useState(0)
-
-  const [isConnected, setIsConnected] = useState(false)
-  const [sessionStatus, setSessionStatus] = useState('DISCONNECTED')
-  const [statusMessage, setStatusMessage] = useState('Not connected')
-  const [isLoadingInitial, setIsLoadingInitial] = useState(true)
-
-  const [groups, setGroups] = useState([])
-  const [contacts, setContacts] = useState([])
-  const [watchedGroupIds, setWatchedGroupIds] = useState([])
-  const [recentMessages, setRecentMessages] = useState([])
-  const [isSavingGroup, setIsSavingGroup] = useState(false)
-  const [isRefreshingGroups, setIsRefreshingGroups] = useState(false)
-  const [isRefreshingMessages, setIsRefreshingMessages] = useState(false)
-
-  const hasAutoConnectedRef = useRef(false)
+  const live = useWhatsAppBridgeStatus()
+  const isConnected = live.connected
+  const phase = live.status
 
   const [error, setError] = useState(null)
   const [view, setView] = useState('groups')
+
+  const [chats, setChats] = useState([])
+  const [watchedIds, setWatchedIds] = useState(new Set())
+  const [isLoadingChats, setIsLoadingChats] = useState(false)
   const [showAddPopup, setShowAddPopup] = useState(false)
   const [addPopupTab, setAddPopupTab] = useState('groups')
-  const [isLoadingAdd, setIsLoadingAdd] = useState(false)
+  const [isSavingGroup, setIsSavingGroup] = useState(false)
   const addPopupRef = useRef(null)
 
-  const isActive = ACTIVE_PHASES.includes(connectPhase) || connectPhase === 'qr_ready'
+  const hasAutoConnectedRef = useRef(false)
 
-  useEffect(() => { connectPhaseRef.current = connectPhase }, [connectPhase])
+  const meta = useMemo(() => statusMeta(phase), [phase])
+  const isActive = ACTIVE_PHASES.includes(phase)
 
-  const meta = useMemo(() => statusMeta(connectPhase, isConnected), [connectPhase, isConnected])
+  const groups = useMemo(() => chats.filter((c) => c.is_group), [chats])
+  const contacts = useMemo(() => chats.filter((c) => !c.is_group), [chats])
 
-  useEffect(() => {
-    if (!ACTIVE_PHASES.includes(connectPhase)) return
-    const startTime = connectStartTimeRef.current
-    if (!startTime) return
-    function update() {
-      const elapsed = Date.now() - startTime
-      setProgressPercent(Math.min(calcProgress(elapsed), 85))
+  // ---- Supabase: chats + watched ------------------------------------------
+  const loadChats = useCallback(async () => {
+    if (!supabase || !user?.id) return
+    setIsLoadingChats(true)
+    try {
+      const [{ data: chatRows }, { data: watchedRows }] = await Promise.all([
+        supabase.from('whatsapp_chats').select('*').eq('user_id', user.id),
+        supabase.from('whatsapp_watched_groups').select('chat_id').eq('user_id', user.id),
+      ])
+      setChats(chatRows || [])
+      setWatchedIds(new Set((watchedRows || []).map((r) => r.chat_id)))
+    } finally {
+      setIsLoadingChats(false)
     }
-    update()
-    const interval = setInterval(update, 200)
-    return () => clearInterval(interval)
-  }, [connectPhase])
+  }, [supabase, user?.id])
 
+  useEffect(() => { loadChats() }, [loadChats])
+
+  // Refresh chats when status flips to connected
   useEffect(() => {
-    if (!ACTIVE_PHASES.includes(connectPhase)) { setDots(''); return }
-    const interval = setInterval(() => {
-      setDots(d => d.length >= 3 ? '' : d + '.')
-    }, 400)
-    return () => clearInterval(interval)
-  }, [connectPhase])
+    if (isConnected) loadChats()
+  }, [isConnected, loadChats])
 
+  // Realtime: watched changes from another tab
   useEffect(() => {
-    if (!['connecting', 'launching'].includes(connectPhase)) return
-    const timeout = setTimeout(() => {
-      setConnectPhase('timeout')
-    }, 120000)
-    return () => clearTimeout(timeout)
-  }, [connectPhase])
+    if (!supabase || !user?.id) return
+    const channel = supabase
+      .channel(`watched_groups:${user.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'whatsapp_watched_groups', filter: `user_id=eq.${user.id}`,
+      }, () => { loadChats() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [supabase, user?.id, loadChats])
 
-  useEffect(() => {
-    if (connectPhase !== 'authenticating') return
-    const timeout = setTimeout(() => {
-      setConnectPhase('error')
-      setError('Setup stalled after authentication. Please try reconnecting.')
-    }, 120000)
-    return () => clearTimeout(timeout)
-  }, [connectPhase])
-
-  useEffect(() => {
-    if (!qrCode) return
-    const timer = setInterval(() => {
-      setQrExpiryCountdown(prev => Math.max(0, prev - 1))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [qrCode])
-
+  // ---- Auto-connect on open (desktop only) --------------------------------
   useEffect(() => {
     if (
-      !isLoadingInitial &&
       !hasAutoConnectedRef.current &&
+      !isMobile &&
+      hasCredentials() &&
       !isConnected &&
-      connectPhase === 'idle' &&
-      !isMobile
+      phase === 'DISCONNECTED'
     ) {
       hasAutoConnectedRef.current = true
-      handleConnect()
+      connectWhatsApp().catch((err) => setError(err.message))
     }
-  }, [isLoadingInitial, connectPhase, isConnected, isMobile])
+  }, [isMobile, isConnected, phase])
 
-  useEffect(() => {
-    if (!showAddPopup) return
-    const handle = e => {
-      if (addPopupRef.current && !addPopupRef.current.contains(e.target)) {
-        setShowAddPopup(false)
-      }
-    }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [showAddPopup])
-
+  // ---- Click-outside close -------------------------------------------------
   useEffect(() => {
     if (showAddPopup) return
     const handle = (e) => {
-      if (popupRef.current && !popupRef.current.contains(e.target)) {
-        const wasActive = ['connecting', 'launching', 'qr_ready'].includes(connectPhaseRef.current)
-        onClose()
-        if (wasActive) disconnectWhatsApp().catch(() => {})
-      }
+      if (popupRef.current && !popupRef.current.contains(e.target)) onClose()
     }
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
   }, [onClose, showAddPopup])
 
-  const fetchGroups = async ({ silent = false } = {}) => {
-    if (!silent) setIsRefreshingGroups(true)
-    try {
-      const [fetchedGroups, fetchedContacts, watched] = await Promise.all([
-        getGroups(), getContacts(), getWatchedGroups()
-      ])
-      setGroups(fetchedGroups)
-      setContacts(fetchedContacts)
-      setWatchedGroupIds(watched.map(g => g.id))
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      if (!silent) setIsRefreshingGroups(false)
-    }
-  }
-
-  const fetchMessages = async ({ silent = false } = {}) => {
-    if (!silent) setIsRefreshingMessages(true)
-    try {
-      const [messages, watched] = await Promise.all([
-        getRecentMessages(), getWatchedGroups()
-      ])
-      const watchedIds = new Set(watched.map(g => g.id))
-      const filtered = messages.filter(msg => {
-        if (watchedIds.size === 0) return false
-        const chatId = msg.groupId || msg.from
-        return watchedIds.has(chatId)
-      })
-      setRecentMessages(filtered.slice(0, 20))
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      if (!silent) setIsRefreshingMessages(false)
-    }
-  }
-
-  const fetchStatus = async ({ silent = false } = {}) => {
-    try {
-      const userId = getCurrentUserId()
-      if (!userId) {
-        setError('WhatsApp not registered. Please refresh the page.')
-        setIsLoadingInitial(false)
-        return
-      }
-
-      const status = await getStatus()
-      const phase = connectPhaseRef.current
-
-      setIsConnected(status.connected)
-      setSessionStatus(status.sessionStatus || 'DISCONNECTED')
-      setStatusMessage(status.message || 'Disconnected')
-
-      if (status.connected) {
-        if (phase !== 'connected') {
-          setConnectPhase('connected')
-          setProgressPercent(100)
-        }
-        setQrCode(null)
-        setQrExpiryCountdown(0)
-        setView('groups')
-      } else if (status.qr) {
-        if (phase !== 'qr_ready') setQrExpiryCountdown(45)
-        setQrCode(status.qr)
-        if (phase !== 'qr_ready') setProgressPercent(90)
-        setConnectPhase('qr_ready')
-      } else if (status.sessionStatus === 'AUTHENTICATING') {
-        setConnectPhase('authenticating')
-        setQrCode(null)
-        setProgressPercent(92)
-      } else if (status.sessionStatus === 'CONNECTING') {
-        if (phase === 'connecting') {
-          setConnectPhase('launching')
-        } else if (phase === 'idle') {
-          setConnectPhase('launching')
-          connectStartTimeRef.current = Date.now() - 3000
-        }
-      } else if (phase === 'qr_ready' && !status.qr && status.sessionStatus !== 'AUTHENTICATING') {
-        // QR refreshing — keep phase, don't clear qrCode immediately
-      } else if (status.sessionStatus === 'DISCONNECTED' || status.sessionStatus === 'FAILED') {
-        if (!['idle', 'error', 'timeout', 'connecting', 'launching', 'authenticating'].includes(phase)) {
-          setConnectPhase('idle')
-          setProgressPercent(0)
-        }
-        if (phase !== 'qr_ready') {
-          setQrCode(null)
-          setQrExpiryCountdown(0)
-        }
-      }
-
-      if (!silent) setError(null)
-    } catch (err) {
-      const phase = connectPhaseRef.current
-      if (['connecting', 'launching', 'authenticating'].includes(phase)) {
-        setConnectPhase('error')
-      }
-      setError(err.message)
-    } finally {
-      setIsLoadingInitial(false)
-    }
-  }
-
   useEffect(() => {
-    fetchStatus()
-    const intervalMs = isActive ? 1000 : 5000
-    const interval = setInterval(() => {
-      if (!isConnected || isActive) fetchStatus({ silent: true })
-      if (isConnected) fetchMessages({ silent: true })
-    }, intervalMs)
-    return () => clearInterval(interval)
-  }, [isConnected, connectPhase])
-
-  useEffect(() => {
-    if (isConnected) {
-      fetchGroups({ silent: true })
-      fetchMessages({ silent: true })
+    if (!showAddPopup) return
+    const handle = (e) => {
+      if (addPopupRef.current && !addPopupRef.current.contains(e.target)) setShowAddPopup(false)
     }
-  }, [isConnected])
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [showAddPopup])
 
+  // ---- Actions -------------------------------------------------------------
   const handleConnect = async () => {
-    if (isConnected || isActive) return
-    setConnectPhase('connecting')
-    setProgressPercent(0)
-    setQrCode(null)
-    setQrExpiryCountdown(0)
     setError(null)
-    connectStartTimeRef.current = Date.now()
     try {
       await connectWhatsApp()
     } catch (err) {
-      if (connectPhaseRef.current === 'connecting') {
-        setConnectPhase('error')
-        setError(err.message)
-      }
+      setError(err.message)
     }
-  }
-
-  const handleCancelConnect = async () => {
-    try { await disconnectWhatsApp() } catch {}
-    setConnectPhase('idle')
-    setProgressPercent(0)
-    setQrCode(null)
-    setQrExpiryCountdown(0)
-    setError(null)
-  }
-
-  const handleRetryConnect = () => {
-    setConnectPhase('idle')
-    setError(null)
-    setProgressPercent(0)
-    setQrCode(null)
-    setQrExpiryCountdown(0)
   }
 
   const handleDisconnect = async () => {
-    try {
-      await disconnectWhatsApp()
-      setConnectPhase('idle')
-      setProgressPercent(0)
-      setIsConnected(false)
-      setQrCode(null)
-      setGroups([])
-      setRecentMessages([])
-      setWatchedGroupIds([])
-      setView('groups')
-      setSessionStatus('DISCONNECTED')
-      setStatusMessage('Disconnected')
-      setError(null)
-    } catch (err) {
-      setError(err.message)
-    }
+    setError(null)
+    try { await disconnectWhatsApp() } catch (err) { setError(err.message) }
   }
 
   const handleLogout = async () => {
-    if (!confirm('Are you sure you want to logout? You will need to scan the QR code again to reconnect.')) return
-    try {
-      await logoutWhatsApp()
-      setConnectPhase('idle')
-      setProgressPercent(0)
-      setIsConnected(false)
-      setQrCode(null)
-      setGroups([])
-      setRecentMessages([])
-      setWatchedGroupIds([])
-      setView('groups')
-      setSessionStatus('DISCONNECTED')
-      setStatusMessage('Logged out')
-      setError(null)
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  const handleOpenAddPopup = async () => {
-    setShowAddPopup(true)
-    setIsLoadingAdd(true)
-    try {
-      const [fetchedGroups, fetchedContacts] = await Promise.all([getGroups(), getContacts()])
-      setGroups(fetchedGroups)
-      setContacts(fetchedContacts)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsLoadingAdd(false)
-    }
+    if (!confirm('Logout? You will need to scan the QR again to reconnect.')) return
+    setError(null)
+    try { await logoutWhatsApp() } catch (err) { setError(err.message) }
   }
 
   const handleAddItem = async (item) => {
-    if (isSavingGroup || watchedGroupIds.includes(item.id)) return
-    const nextIds = [...watchedGroupIds, item.id]
-    setWatchedGroupIds(nextIds)
+    if (!supabase || !user?.id || isSavingGroup || watchedIds.has(item.chat_id)) return
     setIsSavingGroup(true)
+    const next = new Set(watchedIds)
+    next.add(item.chat_id)
+    setWatchedIds(next)
     try {
-      const allItems = [...groups, ...contacts]
-      const watchedItems = allItems.filter(g => nextIds.includes(g.id))
-      await setWatchedGroups(watchedItems)
+      const { error } = await supabase.from('whatsapp_watched_groups').insert({
+        user_id: user.id,
+        chat_id: item.chat_id,
+        name: item.name,
+      })
+      if (error) throw error
     } catch (err) {
       setError(err.message)
-      setWatchedGroupIds(watchedGroupIds)
+      setWatchedIds(watchedIds)
     } finally {
       setIsSavingGroup(false)
     }
   }
 
-  const handleRemoveItem = async (itemId) => {
-    if (isSavingGroup) return
-    const nextIds = watchedGroupIds.filter(id => id !== itemId)
-    setWatchedGroupIds(nextIds)
+  const handleRemoveItem = async (chatId) => {
+    if (!supabase || !user?.id || isSavingGroup) return
     setIsSavingGroup(true)
+    const next = new Set(watchedIds)
+    next.delete(chatId)
+    setWatchedIds(next)
     try {
-      const allItems = [...groups, ...contacts]
-      const watchedItems = allItems.filter(g => nextIds.includes(g.id))
-      await setWatchedGroups(watchedItems)
+      const { error } = await supabase
+        .from('whatsapp_watched_groups')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('chat_id', chatId)
+      if (error) throw error
     } catch (err) {
       setError(err.message)
-      setWatchedGroupIds(watchedGroupIds)
+      setWatchedIds(watchedIds)
     } finally {
       setIsSavingGroup(false)
     }
   }
 
+  // ---- Render --------------------------------------------------------------
   const panelClass = 'glass-panel text-[color:var(--theme-text-primary)]'
   const subClass = 'theme-text-secondary'
   const cardClass = 'glass-subtle border-[color:var(--theme-border)]'
@@ -428,7 +207,6 @@ export default function WhatsAppPopup({ onClose }) {
     warning: 'bg-amber-500',
     danger: 'bg-red-500',
   }[meta.tone]
-  const validCount = recentMessages.filter(m => m.isValidUpcomingEvent).length
 
   return (
     <>
@@ -437,43 +215,29 @@ export default function WhatsAppPopup({ onClose }) {
         className={`fixed inset-x-3 top-16 w-auto max-w-[420px] rounded-2xl shadow-2xl border animate-popIn z-50 overflow-hidden md:absolute md:inset-x-auto md:top-14 md:right-4 md:w-[400px] ${panelClass}`}
         style={{ maxHeight: '82vh' }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[color:var(--theme-border)]">
           <div className="flex items-center gap-2.5">
             <h3 className="text-sm font-semibold theme-text-primary">WhatsApp</h3>
             <div className={`w-2 h-2 rounded-full ${toneClass}`} />
+            <span className={`text-[11px] ${subClass}`}>{meta.label}</span>
           </div>
-          <button
-            onClick={() => {
-              const wasActive = ['connecting', 'launching', 'qr_ready'].includes(connectPhase)
-              onClose()
-              if (wasActive) disconnectWhatsApp().catch(() => {})
-            }}
-            className="p-1.5 rounded-lg theme-icon-btn"
-          >
+          <button onClick={onClose} className="p-1.5 rounded-lg theme-icon-btn">
             <svg className={`w-4 h-4 ${subClass}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Content */}
         <div className="overflow-y-auto p-4 space-y-4" style={{ maxHeight: 'calc(82vh - 80px)' }}>
-          {/* Error banner (not shown in error/timeout phase — those have their own UI) */}
-          {error && connectPhase !== 'error' && connectPhase !== 'timeout' && (
+          {error && (
             <div className={`p-3 rounded-lg border text-xs ${isDark ? 'bg-red-500/10 border-red-500/20 text-red-300' : 'bg-red-50 border-red-200 text-red-600'}`}>
               {error}
             </div>
           )}
 
-          {/* ---- Disconnected / Connecting States ---- */}
           {!isConnected && (
             <div className={`rounded-xl border p-4 ${cardClass}`}>
-              {isLoadingInitial ? (
-                <div className="flex flex-col items-center py-8">
-                  <LoadingSpinner size="md" label="Checking WhatsApp status" />
-                </div>
-              ) : isMobile ? (
+              {isMobile && phase === 'DISCONNECTED' ? (
                 <div className="flex flex-col items-center py-6 text-center">
                   <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
                     <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -482,269 +246,134 @@ export default function WhatsAppPopup({ onClose }) {
                   </div>
                   <h4 className="text-sm font-semibold theme-text-primary mb-2">Use Desktop to Connect</h4>
                   <p className={`text-xs ${subClass} max-w-[280px]`}>
-                    WhatsApp connection requires scanning a QR code with your phone. Please use the desktop version.
+                    QR scan requires desktop. Open this from your computer.
                   </p>
                 </div>
-              ) : connectPhase === 'idle' ? (
+              ) : phase === 'DISCONNECTED' || phase === 'FAILED' ? (
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold">Connection status</p>
-                    <p className={`text-xs mt-1 ${subClass}`}>{statusMessage}</p>
+                    <p className={`text-xs mt-1 ${subClass}`}>{live.message || 'Not connected'}</p>
                   </div>
                   <button
                     onClick={handleConnect}
-                    disabled={isActive}
-                    className="px-4 py-2.5 rounded-lg text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white disabled:opacity-50 transition-colors"
+                    className="px-4 py-2.5 rounded-lg text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white transition-colors"
                   >
                     Connect WhatsApp
                   </button>
                 </div>
-              ) : ACTIVE_PHASES.includes(connectPhase) ? (
-                <div className="flex flex-col items-center py-6">
-                  <div className="relative mb-5">
-                    <div className="w-16 h-16 rounded-full bg-[#25D366]/15 flex items-center justify-center animate-whatsappPulse">
-                      <svg className="w-8 h-8 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a8 8 0 01-4.243-1.214L4 20l1.214-3.757A8 8 0 0112 4c4.411 0 8 3.589 8 8s-3.589 8-8 8z"/>
-                        <path d="M8.5 14a.5.5 0 01-.354-.854l7-7a.5.5 0 01.708.708l-7 7A.498.498 0 018.5 14z"/>
-                      </svg>
-                    </div>
-                    <div className="absolute inset-0 rounded-full border-2 border-[#25D366]/20 animate-whatsappRing" />
+              ) : phase === 'QR_READY' && live.qr ? (
+                <div className="flex flex-col items-center py-4">
+                  <div className="bg-white rounded-2xl p-5 shadow-lg">
+                    <QRCodeSVG value={live.qr} size={220} level="M" includeMargin={false} bgColor="#ffffff" fgColor="#000000" />
                   </div>
-                  <p className="text-sm font-semibold theme-text-primary mb-1">
-                    {PHASE_LABELS[connectPhase]}{dots}
+                  <p className={`text-xs mt-4 ${subClass} text-center max-w-[280px]`}>
+                    Open WhatsApp → Linked Devices → Scan this code
                   </p>
-                  <p className={`text-xs ${subClass} mb-4`}>
-                    {PHASE_HINTS[connectPhase]}
-                  </p>
-                  <div className="w-56 h-1.5 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
-                    <div
-                      className="h-full bg-[#25D366] rounded-full transition-[width] duration-300 ease-out"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
                   <button
-                    onClick={handleCancelConnect}
+                    onClick={handleDisconnect}
                     className="text-xs text-red-400 hover:text-red-500 mt-4 transition-colors"
                   >
                     Cancel
                   </button>
                 </div>
-              ) : connectPhase === 'qr_ready' ? (
-                <div className="flex flex-col items-center py-4">
-                  {qrCode ? (
-                    <>
-                      <div className="bg-white rounded-2xl p-5 shadow-lg">
-                        <QRCodeSVG value={qrCode} size={220} level="M" includeMargin={false} bgColor="#ffffff" fgColor="#000000" />
-                      </div>
-                      <p className={`text-xs mt-4 ${subClass} text-center max-w-[280px]`}>
-                        Open WhatsApp → Linked Devices → Scan this code
-                      </p>
-                      {qrExpiryCountdown > 0 && (
-                        <p className={`text-xs mt-1.5 ${qrExpiryCountdown <= 10 ? 'text-amber-500' : subClass}`}>
-                          Expires in {qrExpiryCountdown}s
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center py-6">
-                      <LoadingSpinner size="md" label="Generating QR code" />
-                      <p className={`text-xs mt-3 ${subClass}`}>New QR code generating...</p>
+              ) : (
+                <div className="flex flex-col items-center py-6">
+                  <div className="relative mb-5">
+                    <div className="w-16 h-16 rounded-full bg-[#25D366]/15 flex items-center justify-center animate-whatsappPulse">
+                      <svg className="w-8 h-8 text-[#25D366]" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
+                      </svg>
                     </div>
-                  )}
-                </div>
-              ) : connectPhase === 'timeout' ? (
-                <div className="flex flex-col items-center py-6">
-                  <div className="w-14 h-14 rounded-full bg-amber-500/15 flex items-center justify-center mb-4">
-                    <svg className="w-7 h-7 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
                   </div>
-                  <p className="text-sm font-semibold theme-text-primary mb-1">Connection timed out</p>
-                  <p className={`text-xs ${subClass} text-center max-w-[260px] mb-4`}>
-                    WhatsApp took too long to respond. This can happen on first connection or when the server is busy.
-                  </p>
+                  <p className="text-sm font-semibold theme-text-primary mb-1">{PHASE_LABELS[phase] || 'Connecting'}</p>
+                  <p className={`text-xs ${subClass} mb-4`}>{PHASE_HINTS[phase] || 'Setting up...'}</p>
+                  <LoadingSpinner size="sm" />
                   <button
-                    onClick={handleRetryConnect}
-                    className="px-4 py-2.5 rounded-lg text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white transition-colors"
+                    onClick={handleDisconnect}
+                    className="text-xs text-red-400 hover:text-red-500 mt-4 transition-colors"
                   >
-                    Try Again
+                    Cancel
                   </button>
                 </div>
-              ) : connectPhase === 'error' ? (
-                <div className="flex flex-col items-center py-6">
-                  <div className="w-14 h-14 rounded-full bg-red-500/15 flex items-center justify-center mb-4">
-                    <svg className="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold theme-text-primary mb-1">Connection failed</p>
-                  <p className={`text-xs ${subClass} text-center max-w-[260px] mb-4`}>
-                    {error || 'Something went wrong. Please try again.'}
-                  </p>
-                  <button
-                    onClick={handleRetryConnect}
-                    className="px-4 py-2.5 rounded-lg text-xs font-semibold bg-[#25D366] hover:bg-[#20BD5A] text-white transition-colors"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              ) : null}
+              )}
             </div>
           )}
 
-          {/* ---- Connected State ---- */}
           {isConnected && (
             <>
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium theme-text-secondary">{statusMessage}</p>
+                <p className="text-xs font-medium theme-text-secondary">{live.message || 'Connected'}</p>
                 <div className="flex gap-2">
-                  <button
-                    onClick={handleDisconnect}
-                    className="text-xs px-3 py-1.5 rounded-lg theme-control press-feedback"
-                  >
-                    Disconnect
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="text-xs px-3 py-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-                  >
-                    Logout
-                  </button>
+                  <button onClick={handleDisconnect} className="text-xs px-3 py-1.5 rounded-lg theme-control press-feedback">Disconnect</button>
+                  <button onClick={handleLogout} className="text-xs px-3 py-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors">Logout</button>
                 </div>
               </div>
 
-              {/* Tab Switcher */}
-              <div className="flex gap-2 p-1 rounded-lg glass-subtle">
-                {['groups', 'messages'].map((tab) => (
+              <div className={`rounded-xl border p-3 ${cardClass}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold">
+                    {watchedIds.size > 0
+                      ? `Watching ${watchedIds.size} item${watchedIds.size === 1 ? '' : 's'}`
+                      : 'No groups or chats monitored'}
+                  </p>
                   <button
-                    key={tab}
-                    onClick={() => setView(tab)}
-                    className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${
-                      view === tab ? 'theme-control-active' : 'theme-text-secondary theme-hover-text'
-                    }`}
+                    onClick={() => setShowAddPopup(true)}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20BD5A] text-white transition-colors"
                   >
-                    {tab === 'groups' ? 'Being monitored' : `Messages (${validCount})`}
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add
                   </button>
-                ))}
-              </div>
-
-              {/* Groups View */}
-              {view === 'groups' && (
-                <div className={`rounded-xl border p-3 ${cardClass}`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold">
-                      {watchedGroupIds.length > 0
-                        ? `Watching ${watchedGroupIds.length} item${watchedGroupIds.length === 1 ? '' : 's'}`
-                        : 'No groups or chats monitored'
-                      }
-                    </p>
-                    <button
-                      onClick={handleOpenAddPopup}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20BD5A] text-white transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Add
-                    </button>
-                  </div>
-
-                  {watchedGroupIds.length === 0 ? (
-                    <p className={`text-xs text-center py-6 ${subClass}`}>
-                      Click "Add" to select groups or contacts to monitor for upcoming events and tasks.
-                    </p>
-                  ) : (
-                    <div className="space-y-2 max-h-72 overflow-y-auto">
-                      {[...groups, ...contacts]
-                        .filter(item => watchedGroupIds.includes(item.id))
-                        .map((item) => {
-                          const isGroup = groups.some(g => g.id === item.id)
-                          return (
-                            <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg glass-subtle">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                isGroup ? 'bg-[#25D366]/20' : 'bg-blue-500/20'
-                              }`}>
-                                <svg className={`w-4 h-4 ${isGroup ? 'text-[#25D366]' : 'text-blue-400'}`} fill="currentColor" viewBox="0 0 24 24">
-                                  <path d={isGroup
-                                    ? "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-6 8c0-2.67 5.33-4 6-4s6 1.33 6 4v1H6v-1zm12-8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1s-.45 1-1 1h-4c-.55 0-1-.45-1-1z"
-                                    : "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                                  } />
-                                </svg>
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs font-medium truncate">{item.name}</p>
-                                <p className={`text-[10px] ${subClass}`}>
-                                  {isGroup
-                                    ? `${item.participantCount || 0} members · ${item.messageCount || 0} msgs`
-                                    : `Contact · ${item.messageCount || 0} msgs`
-                                  }
-                                </p>
-                              </div>
-                              <button
-                                onClick={() => handleRemoveItem(item.id)}
-                                disabled={isSavingGroup}
-                                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50"
-                                title="Remove from monitoring"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                          )
-                        })}
-                    </div>
-                  )}
                 </div>
-              )}
 
-              {/* Messages View */}
-              {view === 'messages' && (
-                <div className={`rounded-xl border p-3 ${cardClass}`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-semibold">Recent messages</p>
-                    <button
-                      onClick={() => fetchMessages()}
-                      disabled={isRefreshingMessages}
-                      className="text-xs px-3 py-1.5 rounded-lg theme-control press-feedback disabled:opacity-50"
-                    >
-                      {isRefreshingMessages ? 'Refreshing...' : 'Refresh'}
-                    </button>
-                  </div>
-
-                  {recentMessages.length === 0 ? (
-                    <p className={`text-xs ${subClass}`}>No recent messages captured yet.</p>
-                  ) : (
-                    <div className="space-y-2 max-h-72 overflow-y-auto">
-                      {recentMessages.map((message) => (
-                        <div key={message.id} className="rounded-lg p-2 border glass-subtle">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <p className="text-xs font-semibold truncate">{message.groupName}</p>
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                              message.isValidUpcomingEvent
-                                ? isDark ? 'bg-green-500/20 text-green-300' : 'bg-green-50 text-green-700'
-                                : isDark ? 'bg-gray-500/20 text-gray-300' : 'bg-gray-100 text-gray-600'
-                            }`}>
-                              {message.isValidUpcomingEvent ? `Valid (${message.extractedEvents})` : 'No upcoming event'}
-                            </span>
-                          </div>
-                          <p className={`text-xs ${subClass} line-clamp-2`}>{message.text || 'Media message'}</p>
-                          <p className={`text-[10px] mt-1 ${subClass}`}>{formatTime(message.timestamp)} · {message.messageType}</p>
+                {isLoadingChats && chats.length === 0 ? (
+                  <div className="flex items-center justify-center py-6"><LoadingSpinner size="sm" /></div>
+                ) : watchedIds.size === 0 ? (
+                  <p className={`text-xs text-center py-6 ${subClass}`}>
+                    Click "Add" to select groups or contacts to monitor for events.
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-72 overflow-y-auto">
+                    {chats.filter((c) => watchedIds.has(c.chat_id)).map((item) => (
+                      <div key={item.chat_id} className="flex items-center gap-3 p-2 rounded-lg glass-subtle">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${item.is_group ? 'bg-[#25D366]/20' : 'bg-blue-500/20'}`}>
+                          <svg className={`w-4 h-4 ${item.is_group ? 'text-[#25D366]' : 'text-blue-400'}`} fill="currentColor" viewBox="0 0 24 24">
+                            <path d={item.is_group
+                              ? "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-6 8c0-2.67 5.33-4 6-4s6 1.33 6 4v1H6v-1z"
+                              : "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"} />
+                          </svg>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium truncate">{item.name}</p>
+                          <p className={`text-[10px] ${subClass}`}>
+                            {item.is_group ? `${item.participant_count || 0} members` : 'Contact'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveItem(item.chat_id)}
+                          disabled={isSavingGroup}
+                          className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors disabled:opacity-50"
+                          title="Remove"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Add Groups/Contacts Popup */}
       {showAddPopup && createPortal(
         <div className="fixed inset-0 z-[60] glass-backdrop flex items-center justify-center">
-          <div ref={addPopupRef} className={`w-96 max-h-[80vh] rounded-2xl glass-panel glass-modal shadow-2xl flex flex-col`}>
+          <div ref={addPopupRef} className="w-96 max-h-[80vh] rounded-2xl glass-panel glass-modal shadow-2xl flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-[color:var(--theme-border)]">
               <h3 className="text-base font-semibold">Add to monitor</h3>
               <button onClick={() => setShowAddPopup(false)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
@@ -760,7 +389,7 @@ export default function WhatsAppPopup({ onClose }) {
                   key={tab}
                   onClick={() => setAddPopupTab(tab)}
                   className={`flex-1 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                    addPopupTab === tab ? 'bg-[#25D366] text-white shadow-lg' : 'glass-subtle theme-text-secondary hover:theme-text-primary hover:scale-[1.02]'
+                    addPopupTab === tab ? 'bg-[#25D366] text-white shadow-lg' : 'glass-subtle theme-text-secondary hover:theme-text-primary'
                   }`}
                 >
                   {tab === 'groups' ? `Groups (${groups.length})` : `Chats (${contacts.length})`}
@@ -769,40 +398,32 @@ export default function WhatsAppPopup({ onClose }) {
             </div>
 
             <div className="flex-1 overflow-y-auto p-3">
-              {isLoadingAdd ? (
-                <div className="flex items-center justify-center py-8">
-                  <LoadingSpinner size="sm" />
-                </div>
+              {isLoadingChats ? (
+                <div className="flex items-center justify-center py-8"><LoadingSpinner size="sm" /></div>
               ) : (
                 <div className="space-y-2">
                   {(addPopupTab === 'groups' ? groups : contacts)
-                    .filter(item => !watchedGroupIds.includes(item.id))
+                    .filter((item) => !watchedIds.has(item.chat_id))
                     .map((item) => {
                       const isGroup = addPopupTab === 'groups'
                       return (
                         <button
-                          key={item.id}
+                          key={item.chat_id}
                           onClick={() => handleAddItem(item)}
                           disabled={isSavingGroup}
-                          className="w-full flex items-center gap-3 p-3 rounded-xl glass-subtle hover:bg-white/10 transition-all hover:scale-[1.01] hover:shadow-md text-left disabled:opacity-50 border border-transparent hover:border-[#25D366]/30"
+                          className="w-full flex items-center gap-3 p-3 rounded-xl glass-subtle hover:bg-white/10 transition-all text-left disabled:opacity-50 border border-transparent hover:border-[#25D366]/30"
                         >
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${
-                            isGroup ? 'bg-[#25D366]/20' : 'bg-blue-500/20'
-                          }`}>
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${isGroup ? 'bg-[#25D366]/20' : 'bg-blue-500/20'}`}>
                             <svg className={`w-5 h-5 ${isGroup ? 'text-[#25D366]' : 'text-blue-400'}`} fill="currentColor" viewBox="0 0 24 24">
                               <path d={isGroup
-                                ? "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-6 8c0-2.67 5.33-4 6-4s6 1.33 6 4v1H6v-1zm12-8c0-.55.45-1 1-1h4c.55 0 1 .45 1 1s-.45 1-1 1h-4c-.55 0-1-.45-1-1z"
-                                : "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                              } />
+                                ? "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-6 8c0-2.67 5.33-4 6-4s6 1.33 6 4v1H6v-1z"
+                                : "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"} />
                             </svg>
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium truncate">{item.name}</p>
                             <p className={`text-[11px] ${subClass} mt-0.5`}>
-                              {isGroup
-                                ? `${item.participantCount || 0} members · ${item.messageCount || 0} msgs`
-                                : `${item.messageCount || 0} messages`
-                              }
+                              {isGroup ? `${item.participant_count || 0} members` : 'Contact'}
                             </p>
                           </div>
                           <svg className="w-5 h-5 text-[#25D366] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -811,12 +432,11 @@ export default function WhatsAppPopup({ onClose }) {
                         </button>
                       )
                     })}
-                  {(addPopupTab === 'groups' ? groups : contacts).filter(item => !watchedGroupIds.includes(item.id)).length === 0 && (
+                  {(addPopupTab === 'groups' ? groups : contacts).filter((item) => !watchedIds.has(item.chat_id)).length === 0 && (
                     <p className={`text-sm text-center py-8 ${subClass}`}>
                       {addPopupTab === 'groups'
-                        ? groups.length === 0 ? 'No groups found' : 'All groups are being monitored'
-                        : contacts.length === 0 ? 'No chats found' : 'All chats are being monitored'
-                      }
+                        ? (groups.length === 0 ? 'No groups found' : 'All groups monitored')
+                        : (contacts.length === 0 ? 'No chats found' : 'All chats monitored')}
                     </p>
                   )}
                 </div>
@@ -824,7 +444,7 @@ export default function WhatsAppPopup({ onClose }) {
             </div>
           </div>
         </div>,
-        document.body
+        document.body,
       )}
     </>
   )

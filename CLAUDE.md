@@ -6,10 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Frontend:**
 ```bash
-npm run dev          # Vite dev server (port 5173, proxies /register /users /health /ws → localhost:3001)
+npm run dev          # Vite dev server (port 5173, proxies /users /health → localhost:3001)
 npm run build        # Production build
-npm run test         # Vitest watch mode
-npm run test:coverage
+npx vitest run       # Run vitest once (no watch)
 ```
 
 **Bridge (run from `whatsapp-bridge/`):**
@@ -43,36 +42,41 @@ Three-service app:
 - `src/App.jsx` — Main routing and layout (~20KB, the core app)
 
 **Bridge module map (`whatsapp-bridge/`):**
-- `bridge-server.js` — Express API + WebSocket server
-- `sessionManager.js` — Per-user WhatsApp session lifecycle
-- `extractor.js` — Event extraction via Groq (Llama 3.3 70B)
-- `middleware/` — Auth (`X-User-ID` + `X-API-Key` headers) and CORS
+- `bridge-server.js` — Express API (control plane only: connect/disconnect/logout/chat/health)
+- `sessionManager.js` — Per-user WhatsApp session lifecycle, writes status + chats to Supabase
+- `whatsappProcessor.js` — Groq-powered event extraction, inserts into `whatsapp_events`
+- `extractor.js` — Event parser used by processor
+- `middleware/bridgeAuth.js` — `X-User-ID` + `X-API-Key` validated against Supabase `bridge_api_keys`
+- `supabaseClient.js` — Service-role Supabase client (server-only)
+
+## State Architecture
+
+**Supabase is the single source of truth** for all bridge state. Frontend never polls the bridge for status, chats, watched groups, or events — it reads/subscribes via Supabase Realtime. Bridge writes state to Supabase using the service role key.
+
+Tables (see `supabase/whatsapp_rebuild.sql`):
+- `bridge_api_keys` — per-user API key. Frontend gets it via `supabase.rpc('get_or_create_bridge_api_key')`. Bridge validates against this table with 5min in-memory cache.
+- `whatsapp_status` — per-user `{ status, qr, message, connected }`. Realtime; populates QR/connection UI.
+- `whatsapp_chats` — group + 1:1 chat directory; refreshed when `ready` fires.
+- `whatsapp_watched_groups` — frontend writes (RLS); bridge reads to filter messages.
+- `whatsapp_events` — extracted events queue. Bridge inserts; frontend subscribes via Realtime, processes, deletes the row.
 
 ## Critical Gotchas
 
-**Module systems differ:** Frontend is ESM (`import/export`). Bridge is CommonJS (`require`). Don't mix.
+**Module systems differ:** Frontend is ESM (`import/export`). Bridge is CommonJS (`require`).
+
+**Render free tier consequences:** Bridge spins down after ~15 min idle and **wipes its filesystem on redeploy**. WhatsApp Web LocalAuth in `sessions/` does NOT persist — users must re-scan QR after every cold start. Status table reflects current state via Realtime so UI handles this gracefully.
 
 **Environment variables:**
-- Use `VITE_BRIDGE_URL` (not `VITE_WHATSAPP_BRIDGE_URL`)
-- Leave `VITE_BRIDGE_URL` empty in dev — Vite proxy handles it
-- Set `VITE_USE_BRIDGE_PROXY=true` in production
-- Never set `VITE_GROQ_API_KEY` in production — would expose in JS bundle
-- Render auto-sets `PORT`; don't set `BRIDGE_PORT` in prod
+- Frontend: `VITE_BRIDGE_URL` (empty in dev, Vite proxy handles it). `VITE_USE_BRIDGE_PROXY=true` in prod. `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Never `VITE_GROQ_API_KEY` in prod.
+- Bridge: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (server-only), `GROQ_API_KEY`, `CALENDAR_URL`, `ALLOWED_ORIGINS`. Render auto-sets `PORT`.
 
-**Bridge auth:** All `/users/:userId/*` routes require `X-User-ID` + `X-API-Key` headers. Only `/health` and `/register` are public. API keys stored in `config/api-keys.json` on the bridge (not in Supabase). Supabase has a `bridge_api_keys` table and `get_or_create_bridge_api_key()` helper for the frontend to fetch its key.
+**Bridge endpoints (slim):** `GET /health` (public). `POST /users/:id/connect|disconnect|logout` and `POST /users/:id/chat` require `X-User-ID` + `X-API-Key`. No `/register` — keys come from Supabase RPC.
 
-**Auth gating:** `src/lib/envConfig.js` enforces auth in production regardless of env vars. Dev uses `VITE_REQUIRE_AUTH`.
-
-**Render deploy:** `render.yaml` at repo root. Push to `main` triggers bridge redeploy. Dockerfile is `whatsapp-bridge/Dockerfile` (Alpine Node 20 + Chromium for whatsapp-web.js).
-
-**Rate limits on bridge:**
-- Global: 120 req/min per user/IP
-- `/register`: 10 req/15min per IP
-- `/users/:userId/chat`: 30 req/min per user
+**Rate limits:** Global 120 req/min per user/IP; Groq proxy 30 req/min per user.
 
 ## Testing
 
-Vitest with jsdom, `@testing-library/react`. Config in `vitest.config.js`. Tests in `src/__tests__/` and `whatsapp-bridge/__tests__/`. 5s default timeout.
+Vitest with jsdom, `@testing-library/react`. Config in `vitest.config.js`. Tests in `src/__tests__/`. 5s default timeout.
 
 ```bash
 npx vitest run src/__tests__/SomeTest.test.jsx   # Single test file

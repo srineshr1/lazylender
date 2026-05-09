@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import getSupabaseClient from '../lib/supabase'
 import { isAuthRequired } from '../lib/envConfig'
-import { registerWithBridge, setBridgeCredentials } from '../api/whatsappClient'
+import { setBridgeCredentials } from '../api/whatsappClient'
 
 const AuthContext = createContext({})
 
@@ -22,28 +22,22 @@ export const AuthProvider = ({ children }) => {
   const supabase = getSupabaseClient()
 
   /**
-   * Register user with WhatsApp bridge and get API key
-   * This ensures every user has bridge credentials
+   * Fetch (or create) the user's bridge API key from Supabase, set it on the
+   * client. Source of truth lives in `bridge_api_keys` — bridge validates
+   * against the same table via service role.
    */
-  const ensureBridgeRegistration = async (userId) => {
-    if (!userId) {
-      console.warn('[Auth] No user ID provided for bridge registration')
-      return null
-    }
-    
+  const ensureBridgeCredentials = async (userId) => {
+    if (!userId || !supabase) return null
     try {
-      console.log('[Auth] Registering user with WhatsApp bridge:', userId)
-      const result = await registerWithBridge(userId)
-      console.log('[Auth] Bridge registration successful')
-      return result
-    } catch (error) {
-      console.error('[Auth] Failed to register with bridge:', error.message)
-      // Don't throw - bridge connection is optional
-      // User can still use calendar without WhatsApp integration
-      // But warn about it
-      if (import.meta.env.DEV) {
-        console.warn('[Auth] WhatsApp bridge not available - some features may not work')
-      }
+      const { data, error } = await supabase.rpc('get_or_create_bridge_api_key')
+      if (error) throw error
+      const apiKey = Array.isArray(data) ? data[0]?.api_key : data?.api_key
+      if (!apiKey) throw new Error('RPC returned no api_key')
+      setBridgeCredentials(userId, apiKey)
+      return { userId, apiKey }
+    } catch (err) {
+      console.error('[Auth] Failed to fetch bridge API key:', err.message)
+      setBridgeCredentials(null, null)
       return null
     }
   }
@@ -64,7 +58,7 @@ export const AuthProvider = ({ children }) => {
       
       // Register with bridge if user is logged in
       if (session?.user) {
-        await ensureBridgeRegistration(session.user.id)
+        await ensureBridgeCredentials(session.user.id)
       }
       
       setLoading(false)
@@ -84,7 +78,7 @@ export const AuthProvider = ({ children }) => {
 
       // Register with bridge when user signs in
       if (session?.user && _event === 'SIGNED_IN') {
-        await ensureBridgeRegistration(session.user.id)
+        await ensureBridgeCredentials(session.user.id)
       }
 
       // Clear bridge credentials on sign out

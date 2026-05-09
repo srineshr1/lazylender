@@ -1,66 +1,95 @@
-/**
- * Session Manager for WhatsApp Bridge
- * Manages per-user WhatsApp sessions using whatsapp-web.js
- */
-
 const { Client, LocalAuth } = require('whatsapp-web.js')
 const fs = require('fs')
 const path = require('path')
 
-const { initUserDir, getUserAuthDir, getUserPublicDir, getAllUserIds, sanitizeUserId, writeUserFile, readUserFile } = require('./utils/userData')
+const { getSupabase } = require('./supabaseClient')
 
-const WebSocket = require('ws')
-const crypto = require('crypto')
+const SESSIONS_DIR = path.join(__dirname, 'sessions')
+if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR, { recursive: true })
 
 const sessions = new Map()
 let messageHandler = null
 
-/**
- * Initialize session manager
- */
-function initialize() {
-  console.log('[SessionManager] Initializing...')
-  
-  // Restore existing sessions
-  const userIds = getAllUserIds()
-  console.log(`[SessionManager] Found ${userIds.length} existing user sessions`)
-}
-
-/**
- * Set the message handler callback
- * @param {function} handler - (userId, message) => void
- */
 function setMessageHandler(handler) {
   messageHandler = handler
 }
 
-/**
- * Create or get a WhatsApp client for a user
- * @param {string} userId - User ID
- * @returns {Client} WhatsApp client instance
- */
-function getClient(userId) {
-  if (sessions.has(userId)) {
-    return sessions.get(userId)
+function sanitizeUserId(userId) {
+  return userId.replace(/[^a-zA-Z0-9_-]/g, '')
+}
+
+function userAuthDir(userId) {
+  return path.join(SESSIONS_DIR, `user_${sanitizeUserId(userId)}`)
+}
+
+async function writeStatus(userId, fields) {
+  try {
+    const supabase = getSupabase()
+    const row = {
+      user_id: userId,
+      status: fields.status,
+      qr: fields.qr ?? null,
+      message: fields.message ?? null,
+      connected: !!fields.connected,
+      updated_at: new Date().toISOString(),
+    }
+    const { error } = await supabase.from('whatsapp_status').upsert(row, { onConflict: 'user_id' })
+    if (error) console.error(`[Status] Upsert failed for ${userId}:`, error.message)
+  } catch (err) {
+    console.error(`[Status] write error for ${userId}:`, err.message)
   }
-  
-  const userAuthDir = getUserAuthDir(userId)
-  const userPublicDir = getUserPublicDir(userId)
-  
-  // Ensure user directories exist
-  initUserDir(userId)
-  
-  // Get Chromium path from environment (set in Dockerfile for Railway)
+}
+
+async function writeChats(userId, chats) {
+  try {
+    const supabase = getSupabase()
+    await supabase.from('whatsapp_chats').delete().eq('user_id', userId)
+    if (chats.length === 0) return
+    const rows = chats.map((c) => ({
+      user_id: userId,
+      chat_id: c.id,
+      name: c.name,
+      is_group: c.isGroup,
+      participant_count: c.participantCount || 0,
+      message_count: c.messageCount || 0,
+      updated_at: new Date().toISOString(),
+    }))
+    const { error } = await supabase.from('whatsapp_chats').insert(rows)
+    if (error) console.error(`[Chats] insert failed for ${userId}:`, error.message)
+  } catch (err) {
+    console.error(`[Chats] write error for ${userId}:`, err.message)
+  }
+}
+
+async function getWatchedChatIds(userId) {
+  try {
+    const supabase = getSupabase()
+    const { data, error } = await supabase
+      .from('whatsapp_watched_groups')
+      .select('chat_id')
+      .eq('user_id', userId)
+    if (error) {
+      console.error(`[Watched] read error for ${userId}:`, error.message)
+      return new Set()
+    }
+    return new Set((data || []).map((r) => r.chat_id))
+  } catch (err) {
+    console.error(`[Watched] read error for ${userId}:`, err.message)
+    return new Set()
+  }
+}
+
+function buildClient(userId) {
   const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-  
+
   const client = new Client({
     authStrategy: new LocalAuth({
-      dataDir: userAuthDir,
-      clientId: sanitizeUserId(userId)  // Use sanitized ID to match directory structure
+      dataDir: userAuthDir(userId),
+      clientId: sanitizeUserId(userId),
     }),
     puppeteer: {
       headless: true,
-      executablePath: executablePath,
+      executablePath,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -69,47 +98,73 @@ function getClient(userId) {
         '--no-first-run',
         '--no-zygote',
         '--single-process',
-        '--disable-gpu'
-      ]
+        '--disable-gpu',
+      ],
+    },
+  })
+
+  client.on('qr', (qr) => {
+    console.log(`[Session] QR for ${userId}`)
+    writeStatus(userId, { status: 'QR_READY', qr, message: 'Scan QR code', connected: false })
+  })
+
+  client.on('authenticated', () => {
+    console.log(`[Session] Authenticated ${userId}`)
+    writeStatus(userId, { status: 'AUTHENTICATING', qr: null, message: 'Authenticated, loading...', connected: false })
+  })
+
+  client.on('auth_failure', (err) => {
+    console.error(`[Session] Auth failure ${userId}:`, err)
+    writeStatus(userId, { status: 'FAILED', qr: null, message: 'Auth failed', connected: false })
+  })
+
+  client.on('ready', async () => {
+    console.log(`[Session] Ready ${userId}`)
+    writeStatus(userId, { status: 'CONNECTED', qr: null, message: 'Connected', connected: true })
+
+    try {
+      const chats = await client.getChats()
+      const groups = chats.filter((c) => c.isGroup).map((c) => ({
+        id: c.id._serialized,
+        name: c.name || 'Unknown Group',
+        isGroup: true,
+        participantCount: c.participants?.length || 0,
+        messageCount: 0,
+      }))
+      const contacts = chats.filter((c) => !c.isGroup && !c.isBroadcast).map((c) => ({
+        id: c.id._serialized,
+        name: c.name || c.id.user || 'Unknown',
+        isGroup: false,
+        participantCount: 0,
+        messageCount: 0,
+      }))
+      await writeChats(userId, [...groups, ...contacts])
+      console.log(`[Session] ${userId}: ${groups.length} groups, ${contacts.length} contacts`)
+    } catch (err) {
+      console.error(`[Session] getChats failed for ${userId}:`, err.message)
     }
   })
-  
+
+  client.on('disconnected', (reason) => {
+    console.log(`[Session] Disconnected ${userId}:`, reason)
+    writeStatus(userId, { status: 'DISCONNECTED', qr: null, message: 'Disconnected', connected: false })
+    sessions.delete(userId)
+  })
+
   client.on('message', async (msg) => {
-    if (messageHandler) {
-      const chatId = msg.from  // e.g., "123456789@g.us" or "123456789@c.us"
-      
-      // Check if this chat is in watched groups
-      const watchedGroups = readUserFile(userId, 'watched-groups.json') || []
-      
-      // If no groups selected, skip all messages (require explicit selection)
-      if (watchedGroups.length === 0) {
-        console.log(`[SessionManager] No watched groups configured for ${userId}, skipping message`)
-        return
-      }
-      
-      const isWatched = watchedGroups.some(g => g.id === chatId)
-      
-      if (!isWatched) {
-        // Get chat name for logging
-        let chatName = 'Unknown'
-        try {
-          const chat = await msg.getChat()
-          chatName = chat.name || chat.id.user || 'Unknown'
-        } catch {
-          chatName = msg.from.includes('@g.us') ? 'Group' : 'Contact'
-        }
-        console.log(`[SessionManager] Skipping message from non-watched chat: ${chatName} (${chatId.slice(0, 20)}...)`)
-        return
-      }
-      
-      // Message is from a watched group/contact, process it
+    if (!messageHandler) return
+    try {
+      const watched = await getWatchedChatIds(userId)
+      if (watched.size === 0) return
+      if (!watched.has(msg.from)) return
+
       let groupName = null
       if (msg.from.includes('@g.us')) {
         try {
           const chat = await msg.getChat()
-          groupName = chat.name || 'Unknown Group'
+          groupName = chat.name || 'Group'
         } catch {
-          groupName = 'Unknown Group'
+          groupName = 'Group'
         }
       }
 
@@ -125,11 +180,11 @@ function getClient(userId) {
             }
           }
         } catch (mediaErr) {
-          console.warn(`[SessionManager] Failed to download media for ${userId}: ${mediaErr.message}`)
+          console.warn(`[Session] media download failed: ${mediaErr.message}`)
         }
       }
 
-      const messageData = {
+      messageHandler(userId, {
         id: msg.id._serialized,
         from: msg.from,
         fromMe: msg.fromMe,
@@ -138,421 +193,113 @@ function getClient(userId) {
         hasMedia: msg.hasMedia,
         messageType: msg.type,
         groupId: msg.from.includes('@g.us') ? msg.from : null,
-        groupName: groupName,
+        groupName,
         media,
-      }
-      messageHandler(userId, messageData)
-    }
-  })
-  
-  client.on('qr', (qr) => {
-    // qr is already a string from whatsapp-web.js
-    // Save QR code string to user's public directory
-    const qrPath = path.join(userPublicDir, 'qr.txt')
-    fs.writeFileSync(qrPath, qr)
-    updateUserStatus(userId, { connected: false, qr: qr, message: 'QR Code generated' })
-    console.log(`[SessionManager] QR generated for ${userId}`)
-  })
-  
-  client.on('authenticated', () => {
-    // Fires immediately when user scans QR - before 'ready'
-    console.log(`[SessionManager] Client authenticated for ${userId}`)
-    updateUserStatus(userId, { connected: false, qr: null, message: 'Authenticated, loading...' })
-  })
-  
-  client.on('ready', async () => {
-    console.log(`[SessionManager] Client ready for ${userId}`)
-    updateUserStatus(userId, { connected: true, qr: null, message: 'Connected' })
-    
-    // Fetch all chats and save groups/contacts
-    try {
-      const chats = await client.getChats()
-      const activity = readUserFile(userId, 'group-activity.json') || {}
-      
-      // Filter groups (isGroup = true)
-      const groups = chats
-        .filter(chat => chat.isGroup)
-        .map(chat => ({
-          id: chat.id._serialized,
-          name: chat.name || 'Unknown Group',
-          participantCount: chat.participants?.length || 0,
-          isGroup: true,
-          messageCount: activity[chat.id._serialized] || 0
-        }))
-        .sort((a, b) => b.messageCount - a.messageCount) // Sort by activity
-      
-      // Filter individual chats (not group, not broadcast)
-      const contacts = chats
-        .filter(chat => !chat.isGroup && !chat.isBroadcast)
-        .map(chat => ({
-          id: chat.id._serialized,
-          name: chat.name || chat.id.user || 'Unknown',
-          isGroup: false,
-          messageCount: activity[chat.id._serialized] || 0
-        }))
-        .sort((a, b) => b.messageCount - a.messageCount) // Sort by activity
-      
-      // Save to files
-      writeUserFile(userId, 'groups.json', groups)
-      writeUserFile(userId, 'contacts.json', contacts)
-      
-      console.log(`[SessionManager] Loaded ${groups.length} groups and ${contacts.length} contacts for ${userId}`)
+      })
     } catch (err) {
-      console.error(`[SessionManager] Failed to fetch chats for ${userId}:`, err.message)
+      console.error(`[Session] message handler failed for ${userId}:`, err.message)
     }
   })
-  
-  client.on('disconnected', (reason) => {
-    console.log(`[SessionManager] Client disconnected for ${userId}:`, reason)
-    updateUserStatus(userId, { connected: false, qr: null, message: 'Disconnected' })
-  })
-  
-  client.on('auth_failure', (err) => {
-    console.error(`[SessionManager] Auth failure for ${userId}:`, err)
-    updateUserStatus(userId, { connected: false, qr: null, message: 'Auth failed' })
-  })
-  
-  sessions.set(userId, client)
+
   return client
 }
 
-/**
- * Start the WhatsApp client for a user
- * @param {string} userId - User ID
- */
 async function startSession(userId) {
-  const client = getClient(userId)
-  if (!client.info) {
-    await client.initialize()
-  }
+  let client = sessions.get(userId)
+  if (client) return client
+
+  client = buildClient(userId)
+  sessions.set(userId, client)
+  await writeStatus(userId, { status: 'CONNECTING', qr: null, message: 'Connecting...', connected: false })
+
+  client.initialize().catch((err) => {
+    console.error(`[Session] initialize failed for ${userId}:`, err.message)
+    writeStatus(userId, { status: 'FAILED', qr: null, message: err.message, connected: false })
+    sessions.delete(userId)
+  })
+
   return client
 }
 
-/**
- * Disconnect a user's session
- * @param {string} userId - User ID
- */
+async function disconnectSession(userId) {
+  const client = sessions.get(userId)
+  if (!client) {
+    await writeStatus(userId, { status: 'DISCONNECTED', qr: null, message: 'Disconnected', connected: false })
+    return
+  }
+  try {
+    await client.destroy()
+  } catch (err) {
+    console.warn(`[Session] destroy error for ${userId}:`, err.message)
+  }
+  sessions.delete(userId)
+  await writeStatus(userId, { status: 'DISCONNECTED', qr: null, message: 'Disconnected', connected: false })
+}
+
 async function logoutSession(userId) {
   const client = sessions.get(userId)
   if (client) {
     try {
       await client.logout()
     } catch (err) {
-      console.warn(`[SessionManager] Logout error for ${userId}:`, err.message)
-      await client.destroy().catch(() => {})
+      console.warn(`[Session] logout error for ${userId}:`, err.message)
+      try { await client.destroy() } catch {}
     }
     sessions.delete(userId)
-    updateUserStatus(userId, { connected: false, qr: null, message: 'Logged out' })
   }
+  // Wipe LocalAuth dir so next connect starts fresh
+  try {
+    const dir = userAuthDir(userId)
+    if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true })
+  } catch (err) {
+    console.warn(`[Session] auth dir cleanup failed for ${userId}:`, err.message)
+  }
+  await writeStatus(userId, { status: 'DISCONNECTED', qr: null, message: 'Logged out', connected: false })
 }
 
-/**
- * Get session state for a user
- * @param {string} userId - User ID
- * @returns {object} { connected: boolean, info: object }
- */
-function getSessionState(userId) {
-  const client = sessions.get(userId)
-  if (!client) {
-    return { connected: false, hasSession: false, info: null }
-  }
-  return {
-    connected: !!client.info?.pushName,
-    hasSession: true,
-    info: client.info || null
-  }
-}
-
-/**
- * Check if a user has an active session
- * @param {string} userId - User ID
- * @returns {boolean}
- */
-function hasSession(userId) {
+function isActive(userId) {
   return sessions.has(userId)
 }
 
-/**
- * Update user status file
- * @param {string} userId - User ID
- * @param {object} status - Status object
- */
-function updateUserStatus(userId, status) {
-  try {
-    const { writeUserFile } = require('./utils/userData')
-    writeUserFile(userId, 'status.json', status)
-  } catch (err) {
-    console.error('[SessionManager] Failed to update status:', err.message)
-  }
-}
-
-/**
- * Get all active sessions
- * @returns {string[]} Array of user IDs with active sessions
- */
 function getActiveSessions() {
-  const active = []
-  sessions.forEach((client, userId) => {
-    if (client.info) {
-      active.push(userId)
-    }
-  })
-  return active
+  return Array.from(sessions.keys())
 }
 
-/**
- * Restore existing sessions from storage
- * @returns {Promise<void>}
- */
-async function restoreExistingSessions() {
-  const userIds = getAllUserIds()
-  console.log(`[SessionManager] Found ${userIds.length} existing user directories (sessions initialize on demand)`)
-
-  // Reset status files so stale connected/QR state from last run doesn't mislead the frontend
-  for (const userId of userIds) {
-    updateUserStatus(userId, { connected: false, qr: null, message: 'Disconnected' })
+async function resetStaleStatus() {
+  try {
+    const supabase = getSupabase()
+    const { error } = await supabase
+      .from('whatsapp_status')
+      .update({
+        status: 'DISCONNECTED',
+        connected: false,
+        qr: null,
+        message: 'Bridge restarted — reconnect needed',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('connected', true)
+    if (error) console.error('[Boot] resetStaleStatus failed:', error.message)
+    else console.log('[Boot] cleared stale CONNECTED rows')
+  } catch (err) {
+    console.error('[Boot] resetStaleStatus error:', err.message)
   }
 }
 
-/**
- * Cleanup inactive sessions
- * @returns {Promise<number>} Number of sessions cleaned up
- */
-async function cleanupInactiveSessions() {
-  const userIds = getAllUserIds()
-  let cleaned = 0
-  
-  for (const userId of userIds) {
-    const client = sessions.get(userId)
-    if (client && !client.info) {
-      // Session exists but not connected - could clean up
-      // For now, just log
-      console.log(`[SessionManager] Inactive session for ${userId}`)
-    }
-  }
-  
-  return cleaned
-}
-
-/**
- * Gracefully shutdown all sessions
- * @returns {Promise<void>}
- */
 async function shutdown() {
-  console.log('[SessionManager] Shutting down all sessions...')
-  
+  console.log('[Session] Shutting down all sessions...')
   for (const [userId, client] of sessions) {
-    try {
-      if (client) {
-        await client.destroy()
-        console.log(`[SessionManager] Destroyed session for ${userId}`)
-      }
-    } catch (err) {
-      console.error(`[SessionManager] Error destroying session for ${userId}:`, err.message)
-    }
+    try { await client.destroy() } catch (err) { console.error(`[Session] shutdown ${userId}:`, err.message) }
   }
-  
   sessions.clear()
-  console.log('[SessionManager] All sessions shut down')
-}
-
-// WebSocket client manager - tracks authenticated WS connections per user
-const wsClients = new Map() // userId -> Set of WebSocket connections
-
-/**
- * Authenticate a WebSocket connection
- * @param {WebSocket} ws - The WebSocket connection
- * @param {object} credentials - { userId, apiKey }
- * @returns {boolean} true if authenticated
- */
-function authenticateWsClient(ws, credentials) {
-  const { userId, apiKey } = credentials
-  if (!userId || !apiKey) return false
-
-  try {
-    const keys = loadApiKeys()
-    const stored = keys[userId]
-    if (!stored) return false
-
-    // Timing-safe comparison
-    const storedBuf = Buffer.from(stored)
-    const suppliedBuf = Buffer.from(apiKey)
-    if (storedBuf.length !== suppliedBuf.length) return false
-    return crypto.timingSafeEqual(storedBuf, suppliedBuf)
-  } catch {
-    return false
-  }
-}
-
-function loadApiKeys() {
-  const fs = require('fs')
-  const path = require('path')
-  const API_KEYS_FILE = path.join(__dirname, 'config', 'api-keys.json')
-  try {
-    return JSON.parse(fs.readFileSync(API_KEYS_FILE, 'utf8'))
-  } catch {
-    return {}
-  }
-}
-
-/**
- * Register an authenticated WebSocket client for a user
- * @param {string} userId
- * @param {WebSocket} ws
- */
-function addWsClient(userId, ws) {
-  if (!wsClients.has(userId)) {
-    wsClients.set(userId, new Set())
-  }
-  wsClients.get(userId).add(ws)
-  console.log(`[WS] Client connected for user ${userId} (${wsClients.get(userId).size} total)`)
-}
-
-/**
- * Remove a WebSocket client
- * @param {string} userId
- * @param {WebSocket} ws
- */
-function removeWsClient(userId, ws) {
-  const clients = wsClients.get(userId)
-  if (clients) {
-    clients.delete(ws)
-    if (clients.size === 0) {
-      wsClients.delete(userId)
-    }
-  }
-  console.log(`[WS] Client disconnected for user ${userId}`)
-}
-
-/**
- * Broadcast data to all WebSocket clients of a user
- * @param {string} userId
- * @param {object} data - Data to send (will be JSON.stringify'd)
- */
-function broadcastToUser(userId, data) {
-  const clients = wsClients.get(userId)
-  if (!clients || clients.size === 0) return
-
-  const message = JSON.stringify(data)
-  for (const ws of clients) {
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(message)
-    }
-  }
-}
-
-/**
- * Get WebSocket server instance (creates on first call)
- * @param {http.Server} server - HTTP server to attach to
- * @returns {WebSocket.Server}
- */
-let wss = null
-
-function getWebSocketServer(server) {
-  if (wss) return wss
-
-  wss = new WebSocket.Server({ server, path: '/ws' })
-
-  wss.on('connection', (ws, req) => {
-    console.log('[WS] New connection from:', req.socket.remoteAddress)
-
-    // Heartbeat
-    ws.isAlive = true
-    ws.on('pong', () => { ws.isAlive = true })
-
-    let authenticatedUserId = null
-
-    ws.on('message', (rawData) => {
-      try {
-        const data = JSON.parse(rawData.toString())
-
-        // Auth handshake - must be first message
-        if (data.type === 'auth' && !authenticatedUserId) {
-          const valid = authenticateWsClient(ws, { userId: data.userId, apiKey: data.apiKey })
-          if (valid) {
-            authenticatedUserId = data.userId
-            addWsClient(data.userId, ws)
-            ws.send(JSON.stringify({ type: 'auth_ok' }))
-            console.log(`[WS] Authenticated: ${data.userId}`)
-          } else {
-            ws.send(JSON.stringify({ type: 'auth_error', message: 'Invalid credentials' }))
-            ws.close()
-          }
-          return
-        }
-
-        // Reject unauthenticated messages
-        if (!authenticatedUserId) {
-          ws.send(JSON.stringify({ type: 'error', message: 'Not authenticated' }))
-          return
-        }
-
-        // Handle incoming messages from client (e.g., ack, clear confirmation)
-        if (data.type === 'ack') {
-          console.log(`[WS] Ack from ${authenticatedUserId}: received`)
-        }
-      } catch (err) {
-        console.error('[WS] Message parse error:', err.message)
-      }
-    })
-
-    ws.on('close', () => {
-      if (authenticatedUserId) {
-        removeWsClient(authenticatedUserId, ws)
-      }
-    })
-
-    ws.on('error', (err) => {
-      console.error('[WS] Socket error:', err.message)
-      if (authenticatedUserId) {
-        removeWsClient(authenticatedUserId, ws)
-      }
-    })
-  })
-
-  // Heartbeat interval - ping all clients every 30s
-  const heartbeat = setInterval(() => {
-    if (!wss) return
-    wss.clients.forEach((ws) => {
-      if (!ws.isAlive) {
-        ws.terminate()
-        return
-      }
-      ws.isAlive = false
-      ws.ping()
-    })
-  }, 30000)
-
-  wss.on('close', () => clearInterval(heartbeat))
-
-  console.log('[WS] WebSocket server initialized on /ws path')
-  return wss
-}
-
-/**
- * Broadcast new WhatsApp events to a user's connected clients
- * Called by whatsappProcessor after events are pushed
- * @param {string} userId
- * @param {Array} events - Array of event objects
- */
-function notifyNewEvents(userId, events) {
-  broadcastToUser(userId, { type: 'new_events', events })
 }
 
 module.exports = {
-  initialize,
   setMessageHandler,
-  getClient,
   startSession,
-  createSession: startSession,
+  disconnectSession,
   logoutSession,
-  getSessionState,
-  hasSession,
+  isActive,
   getActiveSessions,
-  restoreExistingSessions,
-  cleanupInactiveSessions,
+  resetStaleStatus,
   shutdown,
-  getWebSocketServer,
-  notifyNewEvents,
-  broadcastToUser
 }

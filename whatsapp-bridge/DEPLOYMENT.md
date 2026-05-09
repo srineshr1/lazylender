@@ -53,10 +53,20 @@ ALLOWED_ORIGINS=https://kairocalender.web.app,https://kairocalender.firebaseapp.
 
 # Authentication
 BRIDGE_REQUIRE_AUTH=true
-BRIDGE_ADMIN_API_KEY=generate_a_long_random_secure_key_here
+
+# Supabase (single source of truth for state)
+# Service role key — server only. NEVER ship to frontend.
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...service_role_key
 
 # Render sets PORT automatically - DO NOT set PORT or BRIDGE_PORT
 ```
+
+### Supabase Migration
+
+Run `supabase/whatsapp_rebuild.sql` in the Supabase SQL Editor before deploying.
+Adds the tables the bridge writes to: `whatsapp_status`, `whatsapp_chats`,
+`whatsapp_watched_groups`, `whatsapp_events`. Idempotent.
 
 ### Important Notes
 

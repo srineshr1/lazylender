@@ -1,33 +1,25 @@
 const axios = require('axios')
 const { extractEvents } = require('./extractor')
-const { readUserFile, writeUserFile } = require('./utils/userData')
-
-// Notify session manager about new events for WebSocket broadcast
-let notifyNewEvents = null
-try {
-  const sessionManager = require('./sessionManager')
-  notifyNewEvents = sessionManager.notifyNewEvents
-} catch (err) {
-  // Fallback if sessionManager not available
-}
+const { getSupabase } = require('./supabaseClient')
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const GROQ_API_KEY = process.env.GROQ_API_KEY
 const TEXT_MODEL = process.env.GROQ_TEXT_MODEL || 'llama-3.3-70b-versatile'
-// Note: Groq doesn't have vision models - for image analysis, we use Claude or Gemini as fallback
 const VISION_MODEL = process.env.GROQ_VISION_MODEL || null
 
 const KEYWORDS = [
   'exam', 'test', 'quiz', 'assignment', 'submission', 'deadline', 'class', 'lecture',
   'lab', 'practical', 'workshop', 'seminar', 'viva', 'project', 'mid', 'semester',
   'schedule', 'timetable', 'rescheduled', 'postponed', 'cancelled', 'tomorrow',
-  'today', 'next week', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+  'today', 'next week', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday',
 ]
+
+const VALID_COLORS = new Set(['pink', 'green', 'blue', 'amber', 'gray'])
 
 function isPotentialEventMessage(text = '') {
   if (!text || typeof text !== 'string') return false
   const lower = text.toLowerCase()
-  return KEYWORDS.some((keyword) => lower.includes(keyword))
+  return KEYWORDS.some((k) => lower.includes(k))
 }
 
 function todayISO() {
@@ -43,10 +35,10 @@ function isUpcoming(dateStr) {
   return date >= today
 }
 
-function dedupeEvents(events) {
+function dedupe(events) {
   const seen = new Set()
-  return events.filter((event) => {
-    const key = `${event.title}::${event.date}::${event.time || '09:00'}`.toLowerCase()
+  return events.filter((e) => {
+    const key = `${e.title}::${e.date}::${e.time || '09:00'}`.toLowerCase()
     if (seen.has(key)) return false
     seen.add(key)
     return true
@@ -59,192 +51,126 @@ function llmPrompt(content, groupName) {
 Today is ${todayISO()}.
 Group: ${groupName}
 
-Return ONLY a JSON object: {"events": [...array...]}. No markdown, no explanation.
-If no valid upcoming events are present, return {"events": []}.
+Return ONLY a JSON object: {"events": [...]}. No markdown, no explanation.
+If no valid upcoming events, return {"events": []}.
 
-Each event object shape:
-{
-  "title": "short clear title",
-  "date": "YYYY-MM-DD",
-  "time": "HH:MM",
-  "duration": 60,
-  "sub": "subject/location/details",
-  "type": "exam|class|lab|assignment|holiday|other",
-  "color": "pink|blue|green|amber|gray"
-}
+Each event:
+{ "title": "short clear title", "date": "YYYY-MM-DD", "time": "HH:MM",
+  "duration": 60, "sub": "subject/location", "type": "exam|class|lab|assignment|holiday|other",
+  "color": "pink|blue|green|amber|gray" }
 
-Message content:
+Message:
 ${content}`
 }
 
 async function callGroq(messages, model) {
   if (!GROQ_API_KEY) return ''
-
-  const res = await axios.post(
-    GROQ_API_URL,
-    {
-      model,
-      messages,
-      temperature: 0.1,
-      max_tokens: 1200,
-      response_format: { type: 'json_object' },
-    },
-    {
-      timeout: 30000,
-      headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  )
-
+  const res = await axios.post(GROQ_API_URL, {
+    model,
+    messages,
+    temperature: 0.1,
+    max_tokens: 1200,
+    response_format: { type: 'json_object' },
+  }, {
+    timeout: 30000,
+    headers: { Authorization: `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+  })
   return res.data?.choices?.[0]?.message?.content || ''
 }
 
-async function analyzeTextWithGroq(text, groupName) {
+async function analyzeText(text, groupName) {
   if (!text || !isPotentialEventMessage(text)) return []
-
   try {
-    const raw = await callGroq(
-      [
-        { role: 'system', content: 'Extract upcoming events only. Return a JSON object: {"events": [...]}. No markdown.' },
-        { role: 'user', content: llmPrompt(text, groupName) },
-      ],
-      TEXT_MODEL
-    )
-
+    const raw = await callGroq([
+      { role: 'system', content: 'Extract upcoming events only. Return JSON {"events":[...]}. No markdown.' },
+      { role: 'user', content: llmPrompt(text, groupName) },
+    ], TEXT_MODEL)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    const eventsArray = Array.isArray(parsed) ? parsed : (parsed.events ?? [])
-    const events = extractEvents(JSON.stringify(eventsArray), groupName)
-    return dedupeEvents(events).filter((event) => isUpcoming(event.date))
+    const arr = Array.isArray(parsed) ? parsed : (parsed.events ?? [])
+    const events = extractEvents(JSON.stringify(arr), groupName)
+    return dedupe(events).filter((e) => isUpcoming(e.date))
   } catch (err) {
-    console.error(`[Processor] Text analysis failed: ${err.message}`)
+    console.error(`[Processor] text analysis failed: ${err.message}`)
     const fallback = extractEvents(text, groupName)
-    return dedupeEvents(fallback).filter((event) => isUpcoming(event.date))
+    return dedupe(fallback).filter((e) => isUpcoming(e.date))
   }
 }
 
-async function analyzeImageWithGroq(media, groupName, caption = '') {
-  // Guard: Return empty array if no vision model configured or no media
-  if (!media?.buffer || !VISION_MODEL) {
-    if (!VISION_MODEL) {
-      console.log('[Processor] Skipping image analysis - no vision model configured')
-    }
-    return []
-  }
-
+async function analyzeImage(media, groupName, caption = '') {
+  if (!media?.buffer || !VISION_MODEL) return []
   try {
     const dataUrl = `data:${media.mimeType || 'image/jpeg'};base64,${media.buffer.toString('base64')}`
     const prompt = `${llmPrompt(caption || 'Analyze this shared schedule image for upcoming events.', groupName)}\nRead details from the image.`
-
-    const raw = await callGroq(
-      [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            { type: 'image_url', image_url: { url: dataUrl } },
-          ],
-        },
+    const raw = await callGroq([{
+      role: 'user',
+      content: [
+        { type: 'text', text: prompt },
+        { type: 'image_url', image_url: { url: dataUrl } },
       ],
-      VISION_MODEL
-    )
-
+    }], VISION_MODEL)
     if (!raw) return []
     const parsed = JSON.parse(raw)
-    const eventsArray = Array.isArray(parsed) ? parsed : (parsed.events ?? [])
-    const events = extractEvents(JSON.stringify(eventsArray), groupName)
-    return dedupeEvents(events).filter((event) => isUpcoming(event.date))
+    const arr = Array.isArray(parsed) ? parsed : (parsed.events ?? [])
+    const events = extractEvents(JSON.stringify(arr), groupName)
+    return dedupe(events).filter((e) => isUpcoming(e.date))
   } catch (err) {
-    console.error(`[Processor] Image analysis failed: ${err.message}`)
+    console.error(`[Processor] image analysis failed: ${err.message}`)
     return []
   }
 }
 
-async function analyzePdfWithGroq(media, groupName, caption = '') {
+async function analyzePdf(media, groupName, caption = '') {
   if (!media?.buffer) return []
-
   try {
     const pdfParse = require('pdf-parse')
     const data = await pdfParse(media.buffer)
     const text = data.text?.slice(0, 12000) || ''
     if (!text.trim()) return []
-    return analyzeTextWithGroq(`${caption}\n\n${text}`, groupName)
+    return analyzeText(`${caption}\n\n${text}`, groupName)
   } catch (err) {
-    console.error(`[Processor] PDF analysis failed: ${err.message}`)
+    console.error(`[Processor] pdf analysis failed: ${err.message}`)
     return []
   }
 }
 
-function saveIncomingMessage(userId, message) {
-  const existing = readUserFile(userId, 'incoming-messages.json') || []
-  const withoutCurrent = existing.filter((item) => item.id !== message.id)
-  withoutCurrent.unshift(message)
-  writeUserFile(userId, 'incoming-messages.json', withoutCurrent.slice(0, 300))
-}
-
-function pushEvents(userId, events) {
+async function pushEvents(userId, sourceMsgId, events) {
   if (!events.length) return
-  const existing = readUserFile(userId, 'events.json') || []
-  writeUserFile(userId, 'events.json', [...existing, ...events])
-  // Notify connected clients via WebSocket
-  if (notifyNewEvents) {
-    notifyNewEvents(userId, events)
-  }
+  const supabase = getSupabase()
+  const rows = events.map((e) => ({
+    user_id: userId,
+    title: String(e.title).slice(0, 200),
+    date: e.date,
+    time: e.time || '09:00',
+    duration: Math.min(Math.max(parseInt(e.duration) || 60, 15), 1440),
+    group_name: (e.group || e.sub || 'WhatsApp').slice(0, 100),
+    color: VALID_COLORS.has(e.color) ? e.color : 'blue',
+    source_message_id: sourceMsgId || null,
+  }))
+  const { error } = await supabase.from('whatsapp_events').insert(rows)
+  if (error) console.error(`[Processor] insert events failed for ${userId}:`, error.message)
+  else console.log(`[Processor] queued ${rows.length} event(s) for ${userId}`)
 }
 
-async function processIncomingMessage(userId, incomingMessage) {
-  const groupName = incomingMessage.groupName || 'WhatsApp Group'
-  const preview = (incomingMessage.text || '').slice(0, 240)
-  
-  console.log(`[Processor] Received message from ${groupName}: "${preview.slice(0, 60)}..." (type: ${incomingMessage.messageType})`)
-
-  const record = {
-    id: incomingMessage.id || `${Date.now()}`,
-    groupId: incomingMessage.groupId,
-    groupName,
-    messageType: incomingMessage.messageType,
-    text: preview,
-    timestamp: incomingMessage.timestamp || Date.now(),
-    hasEventIntent: isPotentialEventMessage(incomingMessage.text || ''),
-    isValidUpcomingEvent: false,
-    extractedEvents: 0,
-  }
-
-  saveIncomingMessage(userId, record)
+async function processIncomingMessage(userId, msg) {
+  const groupName = msg.groupName || 'WhatsApp Group'
+  const preview = (msg.text || '').slice(0, 80)
+  console.log(`[Processor] ${userId} <- ${groupName}: "${preview}" (${msg.messageType})`)
 
   let events = []
-
-  const textTypes = ['chat', 'conversation', 'extendedTextMessage']
-  if (textTypes.includes(incomingMessage.messageType)) {
-    console.log(`[Processor] Processing text message (type: ${incomingMessage.messageType}) from ${groupName}`)
-    events = await analyzeTextWithGroq(incomingMessage.text || '', groupName)
-  }
-
-  if (incomingMessage.messageType === 'image') {
-    events = await analyzeImageWithGroq(incomingMessage.media, groupName, incomingMessage.text || '')
-  }
-
-  if (incomingMessage.messageType === 'document') {
-    const mime = incomingMessage.media?.mimeType || ''
-    if (mime.includes('pdf') || (incomingMessage.media?.fileName || '').toLowerCase().endsWith('.pdf')) {
-      events = await analyzePdfWithGroq(incomingMessage.media, groupName, incomingMessage.text || '')
+  if (['chat', 'conversation', 'extendedTextMessage'].includes(msg.messageType)) {
+    events = await analyzeText(msg.text || '', groupName)
+  } else if (msg.messageType === 'image') {
+    events = await analyzeImage(msg.media, groupName, msg.text || '')
+  } else if (msg.messageType === 'document') {
+    const mime = msg.media?.mimeType || ''
+    const fname = (msg.media?.fileName || '').toLowerCase()
+    if (mime.includes('pdf') || fname.endsWith('.pdf')) {
+      events = await analyzePdf(msg.media, groupName, msg.text || '')
     }
   }
 
-  if (events.length) {
-    pushEvents(userId, events)
-    record.isValidUpcomingEvent = true
-    record.extractedEvents = events.length
-    saveIncomingMessage(userId, record)
-    console.log(`[Processor] Added ${events.length} upcoming event(s) for ${userId} from ${groupName}`)
-  } else {
-    console.log(`[Processor] No events extracted from message (hasEventIntent: ${record.hasEventIntent})`)
-  }
+  if (events.length) await pushEvents(userId, msg.id, events)
 }
 
-module.exports = {
-  processIncomingMessage,
-  isPotentialEventMessage,
-}
+module.exports = { processIncomingMessage, isPotentialEventMessage }

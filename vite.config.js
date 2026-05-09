@@ -22,27 +22,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/register': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path,
-      },
-      '/users': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path,
-      },
-      '/health': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path,
-      },
-      '/ws': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path,
-        ws: true,
-      },
+      '/users': { target: 'http://localhost:3001', changeOrigin: true },
+      '/health': { target: 'http://localhost:3001', changeOrigin: true },
     },
   },
 })
